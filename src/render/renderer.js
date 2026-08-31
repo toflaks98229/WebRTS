@@ -17,6 +17,16 @@ const MOVE_STEP_TIME = 0.16;   // seconds per hex when a unit walks
  * makes a tiled scene look wrong.
  */
 export const PIXEL = 2;
+
+/**
+ * Which way the source art looks, as a `face` value.
+ *
+ * DCSS monster tiles are drawn facing **left** - the wolf's muzzle is on that
+ * side, and so is the paper doll's weapon hand. So it is a fighter facing
+ * *right* who has to be mirrored, not the other way round. Getting this
+ * backwards points both battle lines away from each other.
+ */
+export const ART_FACES = -1;
 /** Screen height of one height-map level, as a fraction of the hex size. */
 export const ELEV_RATIO = 0.45;
 const ATTACK_TIME = 0.45;      // seconds an attack animation plays
@@ -521,7 +531,7 @@ export class Renderer {
         x: v.leanX * reach,
         y: s * 0.3 + v.leanY * reach * 0.5,
         scale: PIXEL,
-        flip: v.face < 0,
+        flip: v.face !== ART_FACES,
       });
     }
     if (!drewSprite) {
