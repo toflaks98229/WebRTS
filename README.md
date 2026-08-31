@@ -97,6 +97,12 @@ node tools/fetch-lpc.mjs
 효과는 범용 엔진이 아니라 필요한 계산 지점에 직접 박혀 있다 —
 `grep colossus src/` 하면 그 특성이 하는 일이 전부 나온다.
 
+화면은 전장과 같은 **육각형 노드**로 짜여 있다. 왼쪽 티어 레일이 도달한
+줄까지 금색으로 채워지고, 잠긴 줄은 `N 레벨` 배지와 함께 물러난다.
+노드는 **습득 · 가능 · 대기 · 잠김** 네 상태로 구분되고, 남은 점수는
+머리말의 진행 링이 알린다. 마우스를 올리면 전체 설명과 지금 왜 못 찍는지가
+뜬다.
+
 ### 단장 특성
 
 단장 트리는 **용병단에 귀속된다.** 단장이 쓰러지면 가장 노련한 생존자가
@@ -110,6 +116,13 @@ node tools/fetch-lpc.mjs
 | 지휘 | 결의·피로·명중·사기 판정 — 부대 전체에 적용 |
 | 경영 | 급여 절감, 매매가, 계약 보수, 회복 속도 |
 | 무예 | 단장 본인의 명중·방어·행동력, 인접 아군 명중 |
+
+각 갈래는 **뿌리 → 갈래 둘 → 마무리** 다이아몬드다. 선행 관계는 노드 상자를
+실제로 측정해 그린 **SVG 베지어 곡선**으로 잇고, 선행이 채워지면 초록으로
+살아난다. 노드에 마우스를 올리면 그 노드까지 이어지는 **선행 사슬 전체**가
+금색으로 밝아져서, 마무리 특성 하나를 찍으려면 무엇이 필요한지 한눈에 보인다.
+(연결선 방식은 [Hkattelu/SkillTree](https://github.com/Hkattelu/SkillTree) 와
+[beautiful-skill-tree](https://github.com/andrico1234/beautiful-skill-tree) 를 참고했다.)
 
 ## 실험실 (디버그)
 
@@ -158,6 +171,7 @@ src/
   render/             camera · renderer(전장) · worldRenderer(지도) · sprites(LPC) · effects
   ui/                 overlay(공용) · hud(전투) · worldHud(지도)
                       settlementPanel(마을) · characterPanel(특성·단장 트리)
+                      perkView(특성 노드 공용 렌더)
 ```
 
 모델 계층(`src/battle`, `src/hex`, `src/data`, `src/campaign`)은 DOM 을 전혀 참조하지

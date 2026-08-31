@@ -1,7 +1,8 @@
 import { Battle } from '../battle/battle.js';
 import { Unit } from '../battle/unit.js';
 import { TEMPLATES } from '../data/units.js';
-import { PERKS, perksByTier, xpForLevel } from '../data/perks.js';
+import { PERKS, xpForLevel, MAX_TIER } from '../data/perks.js';
+import { perkGridHTML, perkTipHTML } from '../ui/perkView.js';
 import { WEAPONS, SHIELDS, BODY_ARMOR, HELMETS } from '../data/items.js';
 import { Layout } from '../hex/layout.js';
 import { Camera } from '../render/camera.js';
@@ -180,23 +181,33 @@ export class LabScene {
     $('#lab-palette').querySelector('[data-open="perks"]').addEventListener('click', () => this.perkDialog());
   }
 
+  /** Every perk is toggleable here regardless of tier - it is a debug brush. */
   perkDialog() {
-    const rows = perksByTier().map((row, i) => `<div class="perk-row">
-      <span class="perk-tier">${i + 1}</span>
-      ${row.map((pk) => `<button class="perk ${this.brush.perks.has(pk.id) ? 'taken' : 'can'}" data-perk="${pk.id}"
-        title="${esc(pk.desc)}"><span class="pi">${pk.icon}</span><span class="pn">${esc(pk.name)}</span></button>`).join('')}
-    </div>`).join('');
-
     const draw = () => {
+      const grid = perkGridHTML((pk) => (this.brush.perks.has(pk.id) ? 'taken' : 'can'),
+        { level: MAX_TIER });
       overlay.modal('브러시 특성', `
-        <div class="sp-sub">여기서 켠 특성이 이후 배치하는 유닛에 함께 붙는다.</div>
-        ${rows}`, null, '닫기', 'wide');
-      $('#modal-body').querySelectorAll('[data-perk]').forEach((b) => b.addEventListener('click', () => {
-        const id = b.dataset.perk;
-        if (this.brush.perks.has(id)) this.brush.perks.delete(id); else this.brush.perks.add(id);
-        this.renderPalette();
-        this.perkDialog();
-      }));
+        <div class="cp-capbar"><div>여기서 켠 특성이 이후 배치하는 유닛에 함께 붙는다.
+          <span class="cp-note">티어 제한은 무시된다 — 조합을 바로 시험해 보기 위해서다.</span></div>
+          <div class="cb-count">${this.brush.perks.size} / 24</div></div>
+        ${grid}`, null, '닫기', 'wide');
+
+      $('#modal-body').querySelectorAll('[data-perk]').forEach((b) => {
+        const pk = PERKS[b.dataset.perk];
+        b.addEventListener('mouseenter', (ev) => {
+          const r = ev.currentTarget.getBoundingClientRect();
+          overlay.tip(perkTipHTML(pk, this.brush.perks.has(pk.id) ? '클릭해서 해제' : '클릭해서 적용'),
+            r.left + r.width / 2, r.top, true);
+        });
+        b.addEventListener('mouseleave', () => overlay.hideTip());
+        b.addEventListener('click', () => {
+          const id = b.dataset.perk;
+          if (this.brush.perks.has(id)) this.brush.perks.delete(id); else this.brush.perks.add(id);
+          overlay.hideTip();
+          this.renderPalette();
+          draw();
+        });
+      });
     };
     draw();
   }
