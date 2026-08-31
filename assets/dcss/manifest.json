@@ -212,7 +212,7 @@
       "mon/humanoids/humans/human.png"
     ],
     "unit.daytaler": [
-      "mon/humanoids/humans/slave_freed.png",
+      "mon/humanoids/humans/human3.png",
       "mon/unique/donald.png"
     ],
     "unit.farmhand": [
@@ -220,12 +220,12 @@
       "mon/humanoids/humans/human3.png"
     ],
     "unit.banditThug": [
-      "mon/humanoids/humans/slave_freed.png",
       "mon/unique/rupert.png",
-      "mon/humanoids/humans/human3.png"
+      "mon/humanoids/humans/human3.png",
+      "mon/unique/donald.png"
     ],
     "unit.banditRaider": [
-      "mon/unique/edmund_weaponless.png",
+      "mon/humanoids/humans/imperial_myrmidon.png",
       "mon/humanoids/humans/human3.png"
     ],
     "unit.banditArcher": [
@@ -233,12 +233,12 @@
       "mon/humanoids/humans/human2.png"
     ],
     "unit.banditVeteran": [
-      "mon/humanoids/humans/imperial_myrmidon.png",
-      "mon/humanoids/humans/vault_guard.png"
+      "mon/humanoids/humans/vault_guard.png",
+      "mon/humanoids/humans/vault_sentinel.png"
     ],
     "unit.banditLeader": [
       "mon/humanoids/humans/vault_warden.png",
-      "mon/unique/edmund_weaponless.png"
+      "mon/humanoids/humans/vault_guard.png"
     ],
     "unit.wolf": [
       "mon/animals/wolf.png"
@@ -263,5 +263,102 @@
     "gear.shield.woodenShield": "player/hand2/buckler_round.png",
     "gear.shield.heaterShield": "player/hand2/kite_shield_kite1.png",
     "gear.shield.kiteShield": "player/hand2/tower_shield_quartered.png"
+  },
+  "hands": {
+    "human": {
+      "weapon": [
+        -1,
+        -2
+      ],
+      "shield": [
+        0,
+        0
+      ]
+    },
+    "human2": {
+      "weapon": [
+        -1,
+        -2
+      ],
+      "shield": [
+        0,
+        0
+      ]
+    },
+    "human3": {
+      "weapon": [
+        -1,
+        -2
+      ],
+      "shield": [
+        0,
+        0
+      ]
+    },
+    "vault_guard": {
+      "weapon": [
+        1,
+        0
+      ],
+      "shield": [
+        -2,
+        1
+      ]
+    },
+    "vault_warden": {
+      "weapon": [
+        1,
+        0
+      ],
+      "shield": [
+        -2,
+        1
+      ]
+    },
+    "donald": {
+      "weapon": [
+        -2,
+        -4
+      ],
+      "shield": [
+        -1,
+        -1
+      ]
+    },
+    "vault_sentinel": {
+      "weapon": [
+        1,
+        0
+      ],
+      "shield": null
+    },
+    "imperial_myrmidon": {
+      "weapon": [
+        0,
+        2
+      ],
+      "shield": null
+    },
+    "terence": {
+      "weapon": [
+        0,
+        0
+      ],
+      "shield": null
+    },
+    "joseph": {
+      "weapon": [
+        0,
+        0
+      ],
+      "shield": null
+    },
+    "rupert": {
+      "weapon": [
+        -3,
+        -3
+      ],
+      "shield": null
+    }
   }
 }

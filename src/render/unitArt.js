@@ -26,21 +26,18 @@ export const UNIT_TILE = 32;
 const FALLBACK = 'unit.militia';
 
 /**
- * Source pixels the weapon is pushed out to the trailing side.
- *
- * Held items are cut to sit against the narrow shoulders of DCSS's paper doll.
- * A monster tile can be a good deal broader than that, and a weapon drawn
- * behind a broad figure - a bare-chested brawler with a hand axe - disappears
- * behind him entirely. A nudge outward keeps the blade in the silhouette
- * without moving it off the hand.
+ * Where a held item sits when DCSS lists no offset for that tile and slot.
+ * Zero is DCSS's own "no shift necessary" case: the paper doll's hand.
  */
-const WEAPON_NUDGE = 3;
+const NO_OFFSET = [0, 0];
 
 export class UnitArt {
   constructor(base, manifest, images) {
     this.base = base;
     this.sets = manifest.units || {};
     this.held = manifest.gear || {};
+    /** tile name -> {weapon, shield} pixel offsets, straight from DCSS. */
+    this.hands = manifest.hands || {};
     this.images = images;      // 'unit.militia.0' / 'gear.weapon.mace' -> Image
   }
 
@@ -78,7 +75,9 @@ export class UnitArt {
     const set = this.sets[id] || this.sets[FALLBACK];
     if (!set || !set.length) return null;
     const key = this.sets[id] ? id : FALLBACK;
-    return this.images.get(`${key}.${unit.id % set.length}`) || null;
+    const i = unit.id % set.length;
+    const img = this.images.get(`${key}.${i}`) || null;
+    return img && { img, tile: set[i].split('/').pop().replace(/\.png$/, '') };
   }
 
   /** The held item art for one slot, or null when there is nothing to show. */
@@ -98,24 +97,34 @@ export class UnitArt {
    * source pixel, shared with the ground so the pixel grids line up.
    *
    * Weapon, body, shield - in that order, so the shield always reads and the
-   * weapon always has a clear silhouette. Every layer stands on the same ground
-   * line: monster tiles are not all 32 square, so each image is measured rather
-   * than assumed, while the 32px held items keep their own footing.
+   * weapon keeps a clear silhouette. Held items are shifted onto this figure's
+   * hands by DCSS's own per-tile offsets; without them the axe hangs where the
+   * paper doll's arm would have been, which is what made some fighters look
+   * like they were holding their weapon a hand's width off to one side.
+   *
+   * Every layer stands on the same ground line - monster tiles are not all 32
+   * square, so each image is measured rather than assumed.
    */
   draw(ctx, unit, { x, y, scale = 2, flip = false } = {}) {
     const body = this.spriteFor(unit);
     if (!body) return false;
     const { weapon, shield } = this.gearFor(unit);
+    const hands = this.hands[body.tile] || {};
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(x, y);
     if (flip) ctx.scale(-1, 1);
-    for (const [img, dx] of [[weapon, -WEAPON_NUDGE], [body, 0], [shield, 0]]) {
+    const layers = [
+      [weapon, hands.weapon || NO_OFFSET],
+      [body.img, NO_OFFSET],
+      [shield, hands.shield || NO_OFFSET],
+    ];
+    for (const [img, [dx, dy]] of layers) {
       if (!img) continue;
       const w = img.width * scale;
       const h = img.height * scale;
-      ctx.drawImage(img, -w / 2 + dx * scale, -h, w, h);
+      ctx.drawImage(img, -w / 2 + dx * scale, -h + dy * scale, w, h);
     }
     ctx.restore();
     return true;

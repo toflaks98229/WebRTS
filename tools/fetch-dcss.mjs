@@ -169,6 +169,10 @@ const TERRAIN = {
  * lists overlap on purpose - a raider in leather and a sellsword in leather are
  * the same picture, and the base ring under their feet is what says which side
  * they are on.
+ *
+ * Every tile here appears in DCSS's own weapon-offset table (see HANDS): those
+ * are the tiles DCSS is willing to hang a weapon on, and everyone in this game
+ * carries one.
  */
 const UNITS = {
   // ---- the company ----
@@ -178,19 +182,51 @@ const UNITS = {
   'unit.militia':     ['mon/humanoids/humans/human.png', 'mon/humanoids/humans/human2.png',
                        'mon/humanoids/humans/human3.png'],
   'unit.poacher':     ['mon/unique/joseph.png', 'mon/humanoids/humans/human.png'],
-  'unit.daytaler':    ['mon/humanoids/humans/slave_freed.png', 'mon/unique/donald.png'],
+  'unit.daytaler':    ['mon/humanoids/humans/human3.png', 'mon/unique/donald.png'],
   'unit.farmhand':    ['mon/humanoids/humans/human2.png', 'mon/humanoids/humans/human3.png'],
 
   // ---- the bandits ----
-  'unit.banditThug':    ['mon/humanoids/humans/slave_freed.png', 'mon/unique/rupert.png',
-                         'mon/humanoids/humans/human3.png'],
-  'unit.banditRaider':  ['mon/unique/edmund_weaponless.png', 'mon/humanoids/humans/human3.png'],
+  'unit.banditThug':    ['mon/unique/rupert.png', 'mon/humanoids/humans/human3.png',
+                         'mon/unique/donald.png'],
+  'unit.banditRaider':  ['mon/humanoids/humans/imperial_myrmidon.png', 'mon/humanoids/humans/human3.png'],
   'unit.banditArcher':  ['mon/unique/joseph.png', 'mon/humanoids/humans/human2.png'],
-  'unit.banditVeteran': ['mon/humanoids/humans/imperial_myrmidon.png', 'mon/humanoids/humans/vault_guard.png'],
-  'unit.banditLeader':  ['mon/humanoids/humans/vault_warden.png', 'mon/unique/edmund_weaponless.png'],
+  'unit.banditVeteran': ['mon/humanoids/humans/vault_guard.png', 'mon/humanoids/humans/vault_sentinel.png'],
+  'unit.banditLeader':  ['mon/humanoids/humans/vault_warden.png', 'mon/humanoids/humans/vault_guard.png'],
 
   // ---- beasts ----
   'unit.wolf': ['mon/animals/wolf.png'],
+};
+
+/**
+ * Where a held item goes on each figure, in source pixels from where the paper
+ * doll would put it. **Taken verbatim from DCSS's own table** -
+ * `mcache_monster::get_weapon_offset` / `get_shield_offset` in
+ * crawl-ref/source/tilemcache.cc.
+ *
+ * DCSS needs this table for the same reason we do: `player/hand1` and `hand2`
+ * are cut to sit against the shoulders of `player/base/human_m`, and every
+ * monster's arms are somewhere else. It is the only way DCSS ever draws a
+ * weapon on a monster tile (tiledoll.cc `pack_doll_buf`), and it is hand-tuned
+ * per tile - 341 weapon entries and 161 shield entries at the time of writing.
+ *
+ * `null` means DCSS lists no number for that slot. For a weapon that is a hard
+ * refusal ("This monster cannot be displayed with a weapon"), so no tile here
+ * has a null weapon. For a shield it usually just means DCSS never gives that
+ * monster one, so nobody tuned it; our fighters loot shields freely, so those
+ * fall back to the doll's own position.
+ */
+const HANDS = {
+  human:             { weapon: [-1, -2], shield: [0, 0] },
+  human2:            { weapon: [-1, -2], shield: [0, 0] },
+  human3:            { weapon: [-1, -2], shield: [0, 0] },
+  vault_guard:       { weapon: [1, 0],   shield: [-2, 1] },
+  vault_warden:      { weapon: [1, 0],   shield: [-2, 1] },
+  donald:            { weapon: [-2, -4], shield: [-1, -1] },
+  vault_sentinel:    { weapon: [1, 0],   shield: null },
+  imperial_myrmidon: { weapon: [0, 2],   shield: null },
+  terence:           { weapon: [0, 0],   shield: null },
+  joseph:            { weapon: [0, 0],   shield: null },
+  rupert:            { weapon: [-3, -3], shield: null },
 };
 
 /**
@@ -274,6 +310,7 @@ async function main() {
 
   manifest.units = {};
   manifest.gear = {};
+  manifest.hands = HANDS;
   for (const [id, rel] of Object.entries(ICONS)) {
     if (await grab(id, rel)) manifest.icons[id] = rel;
   }
