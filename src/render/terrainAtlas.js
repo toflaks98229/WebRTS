@@ -12,10 +12,41 @@
  *     hexes of the same terrain therefore share one continuous field instead of
  *     each showing its own stamped square.
  *
+ * Boundaries are the third piece. DCSS ships directional transition tiles, but
+ * they are cut for a square grid's eight neighbours and do not map onto a hex's
+ * six. So instead of borrowing those, each tile is composed once into its own
+ * small canvas: the base texture, then every higher-priority neighbour feathered
+ * in from the edge they share. The result is cached on the tile, so the cost is
+ * paid at map generation and drawing becomes one drawImage per hex.
+ *
  * Everything is optional: with no atlas the renderer falls back to flat colours.
  */
+import { DIRS } from '../hex/hex.js';
+
 const SHEET = 4;          // variants stitched per side
 const TILE = 32;          // DCSS source tile size
+/** How far a neighbour's ground creeps in, as a fraction of the hex radius. */
+const BLEED = 0.62;
+
+/**
+ * One scratch canvas, reused while composing; never drawn directly.
+ * Resizing a canvas resets its context, but reusing one at the same size does
+ * not - so every piece of state this function relies on is set explicitly.
+ * Leaving `globalCompositeOperation` on its previous value silently turns the
+ * next mask into a no-op.
+ */
+let scratch = null;
+function scratchCtx(w, h) {
+  if (!scratch) scratch = document.createElement('canvas');
+  if (scratch.width !== w || scratch.height !== h) { scratch.width = w; scratch.height = h; }
+  const ctx = scratch.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.clearRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = false;
+  return ctx;
+}
 
 export class TerrainAtlas {
   constructor(base, manifest, images) {
@@ -101,6 +132,132 @@ export class TerrainAtlas {
     }
     this.patterns.set(key, pat);
     return pat;
+  }
+
+  /**
+   * Compose one hex: its own ground, plus each neighbour that outranks it
+   * feathered in from their shared edge. Cached on the tile - terrain does not
+   * change once a map is generated.
+   *
+   * @param layout   hex layout (for size and world position)
+   * @param tile     grid tile; must carry `hex` and `terrain`
+   * @param edges    six entries in hex-DIRS order: `null` or the neighbour's
+   *                 terrain def. The matching hex edge is worked out from the
+   *                 geometry rather than assumed.
+   * @param scale    world pixels per source pixel
+   * @returns {{canvas, ox, oy}} canvas and the world position of its top-left
+   */
+  tileCanvas(layout, tile, edges, def, scale = 2) {
+    if (tile._tex && tile._texKey === this.keyFor(tile, edges, scale)) return tile._tex;
+
+    const s = layout.size;
+    const w = Math.ceil(s * 2) + 2;
+    const h = Math.ceil(s * Math.sqrt(3)) + 2;
+    const centre = layout.toPixel(tile.hex);
+    const ox = centre.x - w / 2;
+    const oy = centre.y - h / 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    // Draw in world coordinates so every pattern keeps its world-space phase.
+    ctx.translate(-ox, -oy);
+    this.hexPath(ctx, layout, tile.hex);
+    ctx.clip();
+
+    const base = this.pattern(ctx, def.id, scale);
+    if (!base) return null;
+    ctx.fillStyle = base;
+    ctx.fillRect(ox, oy, w, h);
+
+    const order = this.edgeOrder(layout);
+    for (let d = 0; d < 6; d++) {
+      const other = edges[d];
+      if (!other || other.id === def.id) continue;
+      if ((other.blend ?? 0) <= (def.blend ?? 0)) continue;
+      this.paintEdge(ctx, layout, tile, order[d], other, scale, { w, h, ox, oy });
+    }
+
+    tile._tex = { canvas, ox, oy };
+    tile._texKey = this.keyFor(tile, edges, scale);
+    return tile._tex;
+  }
+
+  keyFor(tile, edges, scale) {
+    return `${tile.terrain}|${edges.map((e) => (e ? e.id : '-')).join(',')}|${scale}`;
+  }
+
+  /**
+   * Which hex edge faces each of the six neighbour directions. Derived from the
+   * layout once, so a change to the corner order or hex orientation cannot
+   * silently put a shoreline on the wrong side.
+   */
+  edgeOrder(layout) {
+    if (this._edgeOrder) return this._edgeOrder;
+    const origin = { q: 0, r: 0 };
+    const c = layout.toPixel(origin);
+    const pts = layout.corners(origin);
+    const mids = pts.map((p, i) => {
+      const q = pts[(i + 1) % 6];
+      return { x: (p.x + q.x) / 2 - c.x, y: (p.y + q.y) / 2 - c.y };
+    });
+
+    this._edgeOrder = DIRS.map((d) => {
+      const n = layout.toPixel({ q: d.q, r: d.r });
+      const vx = n.x - c.x;
+      const vy = n.y - c.y;
+      let best = 0;
+      let bestDot = -Infinity;
+      mids.forEach((m, i) => {
+        const dot = (m.x * vx + m.y * vy) / Math.hypot(m.x, m.y);
+        if (dot > bestDot) { bestDot = dot; best = i; }
+      });
+      return best;
+    });
+    return this._edgeOrder;
+  }
+
+  hexPath(ctx, layout, hex) {
+    const pts = layout.corners(hex);
+    ctx.beginPath();
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+    ctx.closePath();
+  }
+
+  /** Feather one neighbour's ground in from the edge we share with it. */
+  paintEdge(ctx, layout, tile, dir, other, scale, box) {
+    const { w, h, ox, oy } = box;
+    const pts = layout.corners(tile.hex);
+    const centre = layout.toPixel(tile.hex);
+    // Edge `dir` runs between corners dir and dir+1.
+    const a = pts[dir];
+    const b = pts[(dir + 1) % 6];
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+
+    const sctx = scratchCtx(w, h);
+    sctx.translate(-ox, -oy);
+    const pat = this.pattern(sctx, other.id, scale);
+    if (!pat) return;
+    sctx.fillStyle = pat;
+    sctx.fillRect(ox, oy, w, h);
+
+    // Keep only what is near the shared edge, fading toward the middle.
+    const reach = layout.size * BLEED;
+    const grad = sctx.createLinearGradient(
+      mid.x, mid.y,
+      mid.x + (centre.x - mid.x) / layout.size * reach,
+      mid.y + (centre.y - mid.y) / layout.size * reach,
+    );
+    grad.addColorStop(0, 'rgba(0,0,0,1)');
+    grad.addColorStop(0.55, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    sctx.globalCompositeOperation = 'destination-in';
+    sctx.fillStyle = grad;
+    sctx.fillRect(ox, oy, w, h);
+
+    ctx.drawImage(scratch, ox, oy);
   }
 
   /** One decor sprite (trees), chosen from `r` in 0..1 so a tile keeps its own. */

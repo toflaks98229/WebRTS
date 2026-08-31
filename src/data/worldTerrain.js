@@ -1,19 +1,20 @@
 /**
  * Overworld terrain. `travel` is the hours a company needs to cross one tile;
  * `biome` is the battlefield generated when a fight starts on that tile.
+ * `blend` works as on the battlefield: higher numbers feather into neighbours.
  */
 export const WORLD_TERRAIN = {
-  ocean:    { id: 'ocean',    name: '바다',   travel: 0,   passable: false, biome: 'plains', color: '#1d3247', color2: '#22394f' },
-  shallows: { id: 'shallows', name: '얕은 바다', travel: 0, passable: false, biome: 'plains', color: '#26455e', color2: '#2c4f6a' },
-  beach:    { id: 'beach',    name: '해안',   travel: 4,   passable: true,  biome: 'plains', color: '#8a7c56', color2: '#95875e' },
-  plains:   { id: 'plains',   name: '평원',   travel: 4,   passable: true,  biome: 'plains', color: '#5c6b3c', color2: '#667544' },
-  farmland: { id: 'farmland', name: '농지',   travel: 3,   passable: true,  biome: 'plains', color: '#77743c', color2: '#827f45' },
-  forest:   { id: 'forest',   name: '숲',     travel: 6,   passable: true,  biome: 'forest', color: '#31462a', color2: '#385031' },
-  hills:    { id: 'hills',    name: '구릉',   travel: 6,   passable: true,  biome: 'hills',  color: '#6b6242', color2: '#776d4a' },
-  mountain: { id: 'mountain', name: '산악',   travel: 11,  passable: true,  biome: 'hills',  color: '#5a5750', color2: '#66635b' },
-  peak:     { id: 'peak',     name: '고봉',   travel: 0,   passable: false, biome: 'hills',  color: '#8d8b85', color2: '#9b9992' },
-  swamp:    { id: 'swamp',    name: '습지',   travel: 8,   passable: true,  biome: 'swamp',  color: '#3f4a35', color2: '#47533c' },
-  steppe:   { id: 'steppe',   name: '초원',   travel: 4,   passable: true,  biome: 'plains', color: '#6d6b3f', color2: '#787647' },
+  ocean:    { id: 'ocean', blend: 6,    name: '바다',   travel: 0,   passable: false, biome: 'plains', color: '#1d3247', color2: '#22394f' },
+  shallows: { id: 'shallows', blend: 6, name: '얕은 바다', travel: 0, passable: false, biome: 'plains', color: '#26455e', color2: '#2c4f6a' },
+  beach:    { id: 'beach', blend: 5,    name: '해안',   travel: 4,   passable: true,  biome: 'plains', color: '#8a7c56', color2: '#95875e' },
+  plains:   { id: 'plains', blend: 2,   name: '평원',   travel: 4,   passable: true,  biome: 'plains', color: '#5c6b3c', color2: '#667544' },
+  farmland: { id: 'farmland', blend: 4, name: '농지',   travel: 3,   passable: true,  biome: 'plains', color: '#77743c', color2: '#827f45' },
+  forest:   { id: 'forest', blend: 2,   name: '숲',     travel: 6,   passable: true,  biome: 'forest', color: '#31462a', color2: '#385031' },
+  hills:    { id: 'hills', blend: 1,    name: '구릉',   travel: 6,   passable: true,  biome: 'hills',  color: '#6b6242', color2: '#776d4a' },
+  mountain: { id: 'mountain', blend: 0, name: '산악',   travel: 11,  passable: true,  biome: 'hills',  color: '#5a5750', color2: '#66635b' },
+  peak:     { id: 'peak', blend: 0,     name: '고봉',   travel: 0,   passable: false, biome: 'hills',  color: '#8d8b85', color2: '#9b9992' },
+  swamp:    { id: 'swamp', blend: 5,    name: '습지',   travel: 8,   passable: true,  biome: 'swamp',  color: '#3f4a35', color2: '#47533c' },
+  steppe:   { id: 'steppe', blend: 3,   name: '초원',   travel: 4,   passable: true,  biome: 'plains', color: '#6d6b3f', color2: '#787647' },
 };
 
 /** Roads cut travel time; this is the multiplier applied to a tile's cost. */

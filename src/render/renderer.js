@@ -1,4 +1,5 @@
 import { terrain } from '../data/terrain.js';
+import { DIRS, add } from '../hex/hex.js';
 import { MORALE } from '../battle/unit.js';
 import { SpriteBank, DIR, attackAnim } from './sprites.js';
 
@@ -175,6 +176,21 @@ export class Renderer {
     ctx.restore();
   }
 
+
+  /**
+   * World-space rectangle the camera can currently see, grown by `pad` so hexes
+   * straddling the edge still draw. Composing a tile is not free, so anything
+   * off screen is skipped entirely rather than built and thrown away.
+   */
+  viewBounds(pad = 0) {
+    const hw = this.w / 2 / this.camera.zoom + pad;
+    const hh = this.h / 2 / this.camera.zoom + pad;
+    return {
+      x0: this.camera.x - hw, x1: this.camera.x + hw,
+      y0: this.camera.y - hh, y1: this.camera.y + hh,
+    };
+  }
+
   hexPath(ctx, h, inset = 0) {
     const dy = this.elevY(h);
     const pts = this.layout.corners(h);
@@ -200,22 +216,28 @@ export class Renderer {
       this._sortedFor = this.battle;
     }
 
+    const view = this.viewBounds(s * 2.5);
     for (const tile of this._sorted) {
+      const c = this.layout.toPixel(tile.hex);
+      if (c.x < view.x0 || c.x > view.x1 || c.y < view.y0 || c.y > view.y1) continue;
       const def = terrain(tile.terrain);
       const dy = this.elevY(tile.hex);
-      const c = this.layout.toPixel(tile.hex);
 
       if (tile.elev > 0) this.drawSkirt(ctx, tile, def, dy);
 
-      // The hexagon supplies the shape; the pattern supplies the texture, and
-      // stays pinned to world space so neighbours join up seamlessly.
-      const pat = this.atlas?.pattern(ctx, def.id, TEX_SCALE);
-      this.hexPath(ctx, tile.hex);
-      ctx.fillStyle = pat || (tile.decor > 0.5 ? def.color2 : def.color);
-      ctx.fill();
-      if (pat) {
+      // One pre-composed image per hex: its ground plus whatever the
+      // neighbours bleed over the edges.
+      const tex = this.atlas && this.atlas.tileCanvas(
+        this.layout, tile, this.edgesOf(tile), def, TEX_SCALE);
+      if (tex) {
+        ctx.drawImage(tex.canvas, tex.ox, tex.oy + dy);
         // A wash of the terrain colour keeps the palette coherent with the UI.
-        ctx.fillStyle = withAlpha(def.color, 0.28);
+        this.hexPath(ctx, tile.hex);
+        ctx.fillStyle = withAlpha(def.color, 0.24);
+        ctx.fill();
+      } else {
+        this.hexPath(ctx, tile.hex);
+        ctx.fillStyle = tile.decor > 0.5 ? def.color2 : def.color;
         ctx.fill();
       }
 
@@ -258,6 +280,14 @@ export class Renderer {
     ctx.strokeStyle = 'rgba(0,0,0,0.45)';
     ctx.lineWidth = 1;
     ctx.stroke();
+  }
+
+  /** Neighbouring terrain in hex-direction order, for edge blending. */
+  edgesOf(tile) {
+    return DIRS.map((d) => {
+      const n = this.battle.grid.get(add(tile.hex, d));
+      return n ? terrain(n.terrain) : null;
+    });
   }
 
   drawDecor(ctx, tile, c, s) {
