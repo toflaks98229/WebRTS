@@ -1,5 +1,6 @@
 import { MORALE } from '../battle/unit.js';
 import { overlay, esc, pct } from './overlay.js';
+import { skillIcon } from './icons.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -35,6 +36,7 @@ export class HUD {
 
   // ------------------------------------------------------------- refresh
   refresh() {
+    if (!this.battle) return;      // nothing bound yet - we are on the map
     this.el.round.textContent = this.battle.round;
     this.renderOrder();
     this.renderCard(this.game.inspected || this.battle.current);
@@ -150,7 +152,7 @@ export class HUD {
       const active = this.game.activeSkill === sk.id;
       return `<div class="skill ${ok ? '' : 'disabled'} ${active ? 'active' : ''}" data-skill="${sk.id}">
         <span class="hot">${i + 1}</span>
-        <span class="ic">${sk.icon}</span>
+        <span class="ic-slot">${skillIcon(sk)}</span>
         <span class="nm">${sk.name}</span>
         <span class="cost"><span class="ap">${sk.ap}AP</span> · <span class="fa">${sk.fatigue}</span></span>
       </div>`;
@@ -170,7 +172,7 @@ export class HUD {
     const sk = u?.skills.find((s) => s.id === id);
     if (!sk) return;
     const r = ev.currentTarget.getBoundingClientRect();
-    this.tipHTML(`<h4>${sk.name}</h4>
+    this.tipHTML(`<h4>${skillIcon(sk, 'ic-tip')} ${sk.name}</h4>
       <div class="row"><span>행동력</span><b>${sk.ap}</b></div>
       <div class="row"><span>피로도</span><b>${sk.fatigue}</b></div>
       ${sk.hitBonus ? `<div class="row"><span>명중 보정</span><b class="${sk.hitBonus > 0 ? 'pos' : 'neg'}">${sk.hitBonus > 0 ? '+' : ''}${sk.hitBonus}</b></div>` : ''}

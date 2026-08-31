@@ -199,7 +199,6 @@ kbd {
 .skill:hover:not(.disabled) { border-color: var(--gold); transform: translateY(-2px); }
 .skill.active { border-color: var(--gold); background: linear-gradient(#43371f, #241d12); }
 .skill.disabled { opacity: .35; cursor: not-allowed; }
-.skill .ic { font-size: 20px; line-height: 1; }
 .skill .nm { font-size: 11px; color: var(--text); text-align: center; padding: 0 2px; }
 .skill .cost { font-size: 10px; color: var(--muted); }
 .skill .cost .ap { color: #7fb6e0; }
@@ -552,3 +551,35 @@ kbd {
 .lab-tpl:hover { border-color: var(--edge-hi); }
 .lab-tpl.active { border-color: var(--gold); background: #2a2317; }
 .lab-tpl em { font-style: normal; font-size: 10px; color: var(--muted); }
+
+/* ═════════════════════════ DCSS tile icons ═════════════════════════ */
+/* 32px pixel art: never smooth it, and never let it get a fractional box. */
+.ic {
+  display: inline-block; width: 26px; height: 26px; vertical-align: middle;
+  image-rendering: pixelated; -ms-interpolation-mode: nearest-neighbor;
+}
+.ic-emoji {
+  width: auto; height: auto; font-size: 19px; line-height: 1;
+  filter: grayscale(.35);
+}
+.ic-tip { width: 20px; height: 20px; margin-right: 2px; }
+.ic-row { width: 30px; height: 30px; flex: 0 0 auto; }
+
+/* perk hexes: the tile sits inside the frame */
+.perk .pi .ic { width: 26px; height: 26px; }
+.perk .pi .ic-emoji { font-size: 19px; }
+/* Locked and unearned nodes read as dimmed metal rather than colour art. */
+.perk.locked .pi .ic, .perk.idle .pi .ic { filter: grayscale(.85) brightness(.7); }
+.perk.can .pi .ic { filter: grayscale(.25) brightness(.95); }
+.perk.taken .pi .ic { filter: none; }
+
+/* captain nodes */
+.cn-ic .ic { width: 26px; height: 26px; }
+.cnode.locked .cn-ic .ic { filter: grayscale(.85) brightness(.7); }
+.cnode.can .cn-ic .ic { filter: grayscale(.2); }
+.cnode.taken .cn-ic .ic { filter: none; }
+
+/* action bar */
+.ic-slot { display: flex; align-items: center; justify-content: center; height: 26px; }
+.ic-slot .ic { width: 26px; height: 26px; }
+.skill.disabled .ic-slot .ic { filter: grayscale(.9) brightness(.65); }

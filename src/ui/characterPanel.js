@@ -3,6 +3,7 @@ import { PERKS, xpProgress, MAX_LEVEL } from '../data/perks.js';
 import { CAPTAIN_BRANCHES, CAPTAIN_NODES, nodeAvailable, RENOWN_PER_POINT } from '../data/captainTree.js';
 import { wageOf } from '../campaign/company.js';
 import { perkGridHTML, perkTipHTML } from './perkView.js';
+import { captainIcon } from './icons.js';
 
 /**
  * Roster screen. One tab per concern: a brother's own perks, and the captain's
@@ -162,7 +163,7 @@ export class CharacterPanel {
         const state = has ? 'taken' : can ? 'can' : 'locked';
         return `<button class="cnode ${state} ${this.justTook === n.id ? 'pop' : ''}"
                   data-node="${n.id}" ${can ? '' : 'disabled'}>
-          <span class="cn-ic">${n.icon}</span><span class="cn-nm">${esc(n.name)}</span>
+          <span class="cn-ic">${captainIcon(n)}</span><span class="cn-nm">${esc(n.name)}</span>
         </button>`;
       };
       return `<div class="cbranch" data-branch="${b.id}">
@@ -302,7 +303,7 @@ export class CharacterPanel {
         const note = taken.has(n.id) ? '이미 익혔다.'
           : missing.length ? `선행 필요: ${missing.join(', ')}`
             : this.campaign.captainPoints ? '클릭해서 습득' : '단장 점수가 없다.';
-        overlay.tip(`<h4>${n.icon} ${esc(n.name)}</h4><div class="note">${esc(n.desc)}</div>
+        overlay.tip(`<h4>${captainIcon(n, 'ic-tip')} ${esc(n.name)}</h4><div class="note">${esc(n.desc)}</div>
           <div class="tip-note">${esc(note)}</div>`, r.left + r.width / 2, r.top, true);
         this.highlightChain(n.id, true);
       });

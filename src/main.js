@@ -2,6 +2,7 @@ import { Unit } from './battle/unit.js';
 import { TEMPLATES } from './data/units.js';
 import { RNG } from './core/rng.js';
 import { SpriteBank } from './render/sprites.js';
+import { icons } from './ui/icons.js';
 import { HUD } from './ui/hud.js';
 import { WorldHud } from './ui/worldHud.js';
 import { overlay } from './ui/overlay.js';
@@ -58,8 +59,10 @@ class App {
   /** The company's roster, purse and stash - the state that outlives a battle. */
   get company() { return this.campaign.company; }
 
-  /** LPC sheets are optional: without them the renderer draws its own figures. */
+  /** Both asset packs are optional; the UI falls back on emoji and shapes. */
   async loadSprites() {
+    // Icons arrive after the first paint; nudge the live HUD so they appear.
+    icons.load('assets/dcss').then((ok) => { if (ok) this.scene?.hud?.refresh?.(); });
     const bank = await SpriteBank.load('assets/lpc');
     if (!bank) return;
     this.spriteBank = bank;

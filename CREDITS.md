@@ -50,6 +50,38 @@ CC-BY-SA 3.0 은 GPL-3.0 과 호환되지 않으므로(4.0 과 달리 GPLv3 로�
 편이 깔끔합니다 — 에셋이 없으면 렌더러가 자체 도형 렌더링으로 폴백하므로
 게임은 그대로 동작합니다.
 
+## UI 아이콘 — Dungeon Crawl Stone Soup
+
+특성·단장 특성·전투 기술·장비 아이콘은 [Dungeon Crawl Stone Soup](https://github.com/crawl/crawl)
+의 rltiles 에서 가져왔습니다. `tools/fetch-dcss.mjs` 가 필요한 77개만 내려받습니다.
+
+```bash
+node tools/fetch-dcss.mjs
+```
+
+- **라이선스**: CC0 1.0 (퍼블릭 도메인). 표기 의무는 없지만 예의로 남깁니다.
+- **원작자**: DCSS 타일 아티스트 다수. 재사용을 허락한 작가 목록은
+  [crawl/tiles ARTISTS.md](https://github.com/crawl/tiles/blob/master/ARTISTS.md) 에 있습니다.
+
+### 라이선스가 불분명한 타일은 자동으로 걸러냅니다
+
+DCSS 의 공식 `LICENSE` 는 "타일 대부분은 CC0 이지만 오래된 것은 상황이 복잡할 수
+있다"고 밝히고 있고, 소유권을 확인하지 못한 타일 목록을 따로 관리합니다 —
+[TILES_UNDER_UNKNOWN_LICENSE.md](https://github.com/crawl/tiles/blob/master/TILES_UNDER_UNKNOWN_LICENSE.md).
+
+`tools/fetch-dcss.mjs` 는 **받을 때마다 그 목록을 내려받아 대조하고, 하나라도
+걸리면 매니페스트를 쓰지 않고 비정상 종료합니다.** 작성 시점에 한 번 확인하고
+마는 대신 매번 검사하므로, 목록이 갱신되어도 자동으로 반영됩니다.
+
+실제로 이 검사에 두 개가 걸려 대체했습니다:
+
+| 원래 쓰려던 타일 | 결과 | 대체 |
+| --- | --- | --- |
+| `javelin1.png` (투창) | 제외 목록 | `trident1.png` |
+| `stealth.png` (협공) | 제외 목록 | `camouflage_1.png` |
+
+아이콘이 없어도 UI 는 그대로 동작합니다 — 이모지로 폴백합니다.
+
 ## 헥스 타일 / 지형
 
 지형은 코드로 그립니다(`src/render/renderer.js`). 외부 타일셋을 쓰지 않습니다.

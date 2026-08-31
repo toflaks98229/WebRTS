@@ -14,13 +14,18 @@ npm start
 
 그 뒤 <http://localhost:5173> 을 엽니다. (의존성 없음 — `serve.js` 는 Node 표준 라이브러리만 씁니다.)
 
-캐릭터 스프라이트를 처음 받으려면:
+에셋을 처음 받으려면:
 
 ```bash
 node tools/fetch-lpc.mjs
 ```
 
-에셋이 없어도 게임은 그대로 실행됩니다 — 렌더러가 자체 도형 렌더링으로 되돌아갑니다.
+```bash
+node tools/fetch-dcss.mjs
+```
+
+앞은 캐릭터 스프라이트(LPC), 뒤는 UI 아이콘(DCSS)입니다. 둘 다 없어도 게임은
+그대로 실행됩니다 — 렌더러는 자체 도형으로, UI 는 이모지로 되돌아갑니다.
 
 ## 조작
 
@@ -97,7 +102,8 @@ node tools/fetch-lpc.mjs
 효과는 범용 엔진이 아니라 필요한 계산 지점에 직접 박혀 있다 —
 `grep colossus src/` 하면 그 특성이 하는 일이 전부 나온다.
 
-화면은 전장과 같은 **육각형 노드**로 짜여 있다. 왼쪽 티어 레일이 도달한
+아이콘은 [Dungeon Crawl Stone Soup](https://github.com/crawl/crawl) 의 32px 타일이라
+LPC 스프라이트와 같은 픽셀 아트 결을 유지한다. 화면은 전장과 같은 **육각형 노드**로 짜여 있다. 왼쪽 티어 레일이 도달한
 줄까지 금색으로 채워지고, 잠긴 줄은 `N 레벨` 배지와 함께 물러난다.
 노드는 **습득 · 가능 · 대기 · 잠김** 네 상태로 구분되고, 남은 점수는
 머리말의 진행 링이 알린다. 마우스를 올리면 전체 설명과 지금 왜 못 찍는지가
@@ -152,6 +158,7 @@ index.html            화면 구성
 css/style.css         UI 스타일
 serve.js              의존성 없는 정적 서버
 tools/fetch-lpc.mjs   LPC 스프라이트 선별 다운로더
+tools/fetch-dcss.mjs  DCSS UI 아이콘 다운로더 (라이선스 제외 목록 검사 포함)
 
 tools/lpc-attribution.mjs  에셋 출처 표기 자동 생성
 
@@ -171,7 +178,7 @@ src/
   render/             camera · renderer(전장) · worldRenderer(지도) · sprites(LPC) · effects
   ui/                 overlay(공용) · hud(전투) · worldHud(지도)
                       settlementPanel(마을) · characterPanel(특성·단장 트리)
-                      perkView(특성 노드 공용 렌더)
+                      perkView(특성 노드 공용 렌더) · icons(DCSS 타일 로더)
 ```
 
 모델 계층(`src/battle`, `src/hex`, `src/data`, `src/campaign`)은 DOM 을 전혀 참조하지
@@ -183,7 +190,8 @@ src/
 | 대상 | 라이선스 |
 | --- | --- |
 | 코드 | GPL-3.0-or-later — [LICENSE](LICENSE) |
-| 아트 (`assets/`) | 파일마다 상이 — [assets/lpc/ATTRIBUTION.md](assets/lpc/ATTRIBUTION.md) |
+| 캐릭터 아트 (`assets/lpc/`) | 파일마다 상이 — [ATTRIBUTION.md](assets/lpc/ATTRIBUTION.md) |
+| UI 아이콘 (`assets/dcss/`) | CC0 1.0 — Dungeon Crawl Stone Soup |
 
 번들된 LPC 아트는 CC0 · CC-BY · CC-BY-SA · OGA-BY · GPL 이 섞여 있고, 일부는
 CC-BY-SA 3.0 단독이라 GPL 로 덮을 수 없습니다. 재배포 시 조건은

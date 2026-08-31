@@ -2,6 +2,7 @@ import { overlay, esc } from './overlay.js';
 import { SETTLEMENTS } from '../data/worldTerrain.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
 import { hireCostOf, wageOf, itemDef, itemValue, slotOf } from '../campaign/company.js';
+import { itemIcon } from './icons.js';
 
 const TABS = [
   { id: 'contracts', name: '계약' },
@@ -127,6 +128,7 @@ export class SettlementPanel {
       const price = cam.priceOf(id);
       const cut = price < def.value ? ` <span class="sp-tag">정가 ${def.value}</span>` : '';
       return `<div class="sp-row">
+        ${itemIcon(id, '', 'ic-row')}
         <div class="sp-main">
           <div class="sp-name">${esc(def.name)} <span class="sp-tag">${SLOT_NAME[slotOf(id)] || ''}</span></div>
           <div class="sp-meta">${itemSummary(id, def)}</div>
@@ -151,6 +153,7 @@ export class SettlementPanel {
           || '<span class="sp-empty">단원이 없다.</span>'}</div>`
         : '';
       return `<div class="sp-row">
+        ${itemIcon(id, '', 'ic-row')}
         <div class="sp-main">
           <div class="sp-name">${esc(def.name)} <span class="sp-tag">${SLOT_NAME[slot] || ''}</span></div>
           <div class="sp-meta">${itemSummary(id, def)}</div>
