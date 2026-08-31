@@ -65,6 +65,7 @@ export class CampaignScene {
     this.renderer.resize();
     // The canvas has no layout in the constructor, so keep re-framing until the
     // player takes the camera over themselves.
+    if (this.renderer.w < 200 || this.renderer.h < 150) return;   // no real layout yet
     if (!this.userMovedCamera) this.fitWorld();
   }
 

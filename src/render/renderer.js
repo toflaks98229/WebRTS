@@ -49,8 +49,8 @@ export class Renderer {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
     // A hidden/unlaid-out canvas reports 0; fall back so the camera fit stays sane.
-    this.w = rect.width || this.canvas.parentElement?.clientWidth || window.innerWidth;
-    this.h = rect.height || this.canvas.parentElement?.clientHeight || window.innerHeight;
+    this.w = rect.width || this.canvas.parentElement?.clientWidth || window.innerWidth || 960;
+    this.h = rect.height || this.canvas.parentElement?.clientHeight || window.innerHeight || 540;
     this.dpr = dpr;
     this.canvas.width = Math.floor(this.w * dpr);
     this.canvas.height = Math.floor(this.h * dpr);

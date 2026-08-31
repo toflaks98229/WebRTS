@@ -144,6 +144,7 @@ export class BattleScene {
   // ------------------------------------------------------------ camera fit
   resize() {
     this.renderer.resize();
+    if (this.renderer.w < 200 || this.renderer.h < 150) return;   // no real layout yet
     if (!this.userMovedCamera) { this.centerOnField(); this.fitted = true; }
   }
 
