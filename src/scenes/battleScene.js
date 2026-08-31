@@ -109,9 +109,11 @@ export class BattleScene {
     this.finished = true;
     this.hud.showBanner(result === 'victory' ? '승리' : '패배', 2400);
     const fallenEnemies = this.battle.units.filter((u) => u.faction === 'enemy' && !u.alive);
-    this.loot = result === 'victory'
+    const spoils = result === 'victory'
       ? salvage(this.roster.filter((u) => u.alive), fallenEnemies)
-      : [];
+      : { changes: [], leftovers: [] };
+    this.loot = spoils.changes;
+    this.leftovers = spoils.leftovers;
     setTimeout(() => this.showReport(result), 1100);
   }
 
@@ -129,9 +131,11 @@ export class BattleScene {
       ${rule}<b>생존자 ${survivors.length}명</b>${rows || '<div class="gear-row"><i>없음</i></div>'}
       ${fallen.length ? `${rule}<b style="color:#d1705d">전사자 ${fallen.length}명</b>
         ${fallen.map((u) => `<div class="gear-row"><i>${esc(u.name)}</i><em>${esc(u.title)}</em></div>`).join('')}` : ''}
-      ${this.loot?.length ? `${rule}<b style="color:#c8a24a">전리품</b>
-        ${this.loot.map((c) => `<div class="gear-row"><i>${esc(c.unit.name)}</i><em>${esc(c.from)} → ${esc(c.to)}</em></div>`).join('')}` : ''}`,
-      () => this.onFinish?.(result, { loot: this.loot, survivors: survivors.length, fallen: fallen.length }),
+      ${this.loot?.length ? `${rule}<b style="color:#c8a24a">현장에서 갖춘 장비</b>
+        ${this.loot.map((c) => `<div class="gear-row"><i>${esc(c.unit.name)}</i><em>${esc(c.from)} → ${esc(c.to)}</em></div>`).join('')}` : ''}
+      ${this.leftovers?.length ? `${rule}<b style="color:#c8a24a">창고로 보낸 노획품 ${this.leftovers.length}점</b>
+        <div class="gear-row"><i>마을 상점에서 팔거나 다른 단원에게 넘길 수 있다.</i></div>` : ''}`,
+      () => this.onFinish?.(result, { loot: this.loot, leftovers: this.leftovers }),
       '지도로 돌아가기');
   }
 

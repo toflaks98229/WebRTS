@@ -7,15 +7,20 @@ const MELEE_KINDS = ['sword', 'axe', 'mace', 'spear', 'dagger'];
 const isMelee = (w) => w && MELEE_KINDS.includes(w.kind);
 const value = (it) => (it ? it.value || 0 : 0);
 
+/** Loose gear worth less than this is not worth carrying off the field. */
+const KEEP_MIN_VALUE = 100;
+/** How many spare pieces the company can haul away from one fight. */
+const KEEP_MAX = 6;
+
 /**
  * @param {Unit[]} survivors  living company members
  * @param {Unit[]} fallen     dead enemies to loot
- * @returns {{unit, slot, from, to}[]} what changed, for the after-action report
+ * @returns {{changes: {unit, slot, from, to}[], leftovers: string[]}}
+ *   `changes` is what got worn on the spot; `leftovers` are item ids for the
+ *   company stash, to be sold or handed out later.
  */
 export function salvage(survivors, fallen) {
   const changes = [];
-  if (!survivors.length) return changes;
-
   const drops = { weapon: [], shield: [], body: [], head: [] };
   for (const d of fallen) {
     for (const slot of Object.keys(drops)) {
@@ -23,17 +28,30 @@ export function salvage(survivors, fallen) {
     }
   }
 
+  const spare = [];
   for (const slot of ['body', 'head', 'weapon', 'shield']) {
-    const items = drops[slot].sort((a, b) => value(b) - value(a));
-    for (const item of items) {
-      const taker = bestTaker(survivors, slot, item);
-      if (!taker) continue;
+    // Best first, so the biggest upgrade lands before the hand-me-downs.
+    const queue = drops[slot].slice().sort((a, b) => value(b) - value(a));
+    while (queue.length) {
+      const item = queue.shift();
+      const taker = survivors.length ? bestTaker(survivors, slot, item) : null;
+      if (!taker) { spare.push(item); continue; }
       const old = taker[slot];
       changes.push({ unit: taker, slot, from: old?.name || '없음', to: item.name });
       equip(taker, slot, item);
+      // What it replaced goes back in the queue for someone worse off. Each
+      // pass strictly lowers the value on that brother, so this terminates.
+      if (old?.id) queue.push({ ...old });
     }
   }
-  return changes;
+
+  const leftovers = spare
+    .filter((it) => value(it) >= KEEP_MIN_VALUE)
+    .sort((a, b) => value(b) - value(a))
+    .slice(0, KEEP_MAX)
+    .map((it) => it.id);
+
+  return { changes, leftovers };
 }
 
 /** The survivor who gains the most from this item, or null if nobody does. */

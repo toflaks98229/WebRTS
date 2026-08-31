@@ -1,6 +1,7 @@
 import { overlay, esc, pct } from './overlay.js';
 import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
 import { bandStrengthLabel } from '../campaign/bands.js';
+import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
 import { HOURS_PER_DAY } from '../campaign/campaign.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -51,13 +52,16 @@ export class WorldHud {
     const m = String(Math.floor((c.time % 1) * 60)).padStart(2, '0');
     this.el.clock.textContent = `${h}:${m}`;
 
-    const alive = c.roster.filter((u) => u.alive);
+    const alive = c.company.alive;
     const wounded = alive.filter((u) => u.hp < u.hpMax).length;
-    const here = c.settlementAt(c.company.hex);
-    this.el.status.innerHTML = [
+    const here = c.settlementAt(c.party.hex);
+    this.el.status.innerHTML = `
+      <span class="purse"><b>${c.company.crowns}</b> 크라운</span>
+      <span class="sp-sep"></span>` + [
       `단원 <b>${alive.length}</b>명`,
+      `일당 <b>${c.company.dailyWage}</b>`,
       wounded ? `부상 <b>${wounded}</b>명` : null,
-      c.company.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
+      c.party.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
     ].filter(Boolean).join(' · ');
 
     this.renderRoster();
@@ -90,12 +94,23 @@ export class WorldHud {
 
   renderActions() {
     const c = this.campaign;
-    const site = c.settlementAt(c.company.hex);
+    const site = c.settlementAt(c.party.hex);
     const chips = [];
+
+    // Whatever the company is on the hook for, kept in front of the player.
+    for (const k of c.contracts.slice(0, 2)) {
+      const left = daysLeft(k, c.day);
+      const status = k.state === 'reported' ? `완수 · ${esc(k.issuerName)} 로 보고` : `${left}일 남음`;
+      chips.push(`<div class="contract-chip">
+        <span class="cn">${CONTRACT_TYPES[k.type].icon} ${esc(k.title)}</span>
+        <span class="cd">${status} · ${k.reward} 크라운</span>
+      </div>`);
+    }
 
     if (site) {
       const tier = SETTLEMENTS[site.tier];
       chips.push(`<div class="site-chip"><span class="sn">${esc(site.name)}</span><span class="st">${tier.name}</span></div>`);
+      chips.push('<button class="btn primary" data-act="town">마을 들어가기</button>');
       chips.push('<button class="btn" data-act="rest">하루 휴식</button>');
     }
     this.el.actions.innerHTML = chips.join('');
@@ -103,11 +118,11 @@ export class WorldHud {
       b.addEventListener('click', () => this.scene?.action(b.dataset.act));
     });
 
-    this.el.hint.innerHTML = c.company.moving
+    this.el.hint.innerHTML = c.party.moving
       ? '이동 중 — <b>클릭</b>으로 목적지 변경, <b>정지</b> 버튼으로 멈춤'
       : site
-        ? '<b>클릭</b>으로 이동. 적 무리 위를 클릭하면 추격한다.'
-        : '<b>클릭</b>으로 이동. 마을에 머물면 부상과 장비가 회복된다.';
+        ? '<b>마을 들어가기</b> 에서 계약을 맡고 사람을 쓰고 장비를 사고판다.'
+        : '<b>클릭</b>으로 이동. 급여는 매일 새벽에 나간다.';
   }
 
   // ------------------------------------------------------------- tooltips
@@ -159,6 +174,14 @@ export class WorldHud {
         <li><b>마을에 머물면</b> 시간이 갈수록 부상과 장비가 회복된다.</li>
         <li>야영지의 무리를 없애도 며칠 뒤 다시 채워진다.</li>
         <li>쓰러진 단원은 돌아오지 않는다. 승리하면 적의 장비를 노획한다.</li>
+      </ul>
+      <hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">
+      <b>계약과 살림</b>
+      <ul>
+        <li>마을에서 <b>계약</b>을 맡는다. 산적 소탕은 야영지를 비운 뒤 <b>의뢰한 마을로 돌아가</b> 보고해야 보수를 받는다.</li>
+        <li>호위 계약은 목적지 마을에 도착하면 그 자리에서 삯을 받는다. 기한을 넘기면 계약은 파기된다.</li>
+        <li><b>급여</b>는 매일 새벽에 자동으로 나간다. 이틀 연속 못 주면 단원이 떠난다.</li>
+        <li>노획품 중 쓰지 않는 장비는 <b>창고</b>에 쌓인다. 마을 상점에서 팔거나 다른 단원에게 장착할 수 있다.</li>
       </ul>`);
   }
 }

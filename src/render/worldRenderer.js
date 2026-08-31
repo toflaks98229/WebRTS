@@ -258,7 +258,7 @@ export class WorldRenderer {
     ctx.lineWidth = 2.5;
     ctx.setLineDash([7, 6]);
     ctx.beginPath();
-    const start = this.partyPos(this.campaign.company);
+    const start = this.partyPos(this.campaign.party);
     ctx.moveTo(start.x, start.y);
     for (const h of route.path) {
       const p = this.layout.toPixel(h);
@@ -276,7 +276,7 @@ export class WorldRenderer {
 
   drawParties(ctx) {
     for (const b of this.campaign.bands) if (b.alive) this.drawParty(ctx, b, FACTION.enemy);
-    this.drawParty(ctx, this.campaign.company, FACTION.player, true);
+    this.drawParty(ctx, this.campaign.party, FACTION.player, true);
   }
 
   drawParty(ctx, p, col, isCompany = false) {

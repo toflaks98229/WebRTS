@@ -3,6 +3,7 @@ import { Camera } from '../render/camera.js';
 import { WorldRenderer } from '../render/worldRenderer.js';
 import { HOUR_SECONDS, HOURS_PER_DAY } from '../campaign/campaign.js';
 import { overlay } from '../ui/overlay.js';
+import { SettlementPanel } from '../ui/settlementPanel.js';
 
 const SPEEDS = [0, 1, 3];
 
@@ -48,14 +49,25 @@ export class CampaignScene {
   }
 
   action(id) {
+    if (id === 'town') {
+      const site = this.campaign.settlementAt(this.campaign.party.hex);
+      if (!site) return;
+      // Time must not pass while the player is haggling.
+      const resume = this.speed;
+      this.setSpeed(0);
+      this.campaign.party.stop();
+      new SettlementPanel(this.campaign, site, {
+        maxSize: this.app.maxCompanySize,
+        onChange: () => this.hud.refresh(),
+        onClose: () => { this.setSpeed(resume); this.hud.refresh(); },
+      }).open();
+      return;
+    }
     if (id === 'rest') {
       // Skip a day in one go rather than making the player watch the clock.
-      this.campaign.company.stop();
+      this.campaign.party.stop();
       for (let i = 0; i < HOURS_PER_DAY; i++) this.campaign.update(1);
       this.campaign.note('하루를 머물며 상처를 다스렸다.', 'rest');
-      // A settlement is also where the company finds replacements.
-      const hired = this.app.hireAtSettlement();
-      if (hired) this.campaign.note(`${hired.name} (${hired.title}) 이(가) 합류했다.`, 'hire');
       this.hud.refresh();
     }
   }
@@ -86,7 +98,7 @@ export class CampaignScene {
   }
 
   centerOnCompany(lerp = 0.2) {
-    this.camera.centerOn(this.renderer.partyPos(this.campaign.company), lerp);
+    this.camera.centerOn(this.renderer.partyPos(this.campaign.party), lerp);
   }
 
   // ------------------------------------------------------------ input
@@ -125,7 +137,7 @@ export class CampaignScene {
     this.userMovedCamera = true;
   }
 
-  onSecondaryClick() { this.campaign.company.stop(); this.hud.refresh(); }
+  onSecondaryClick() { this.campaign.party.stop(); this.hud.refresh(); }
 
   onClick() {
     const h = this.hexUnderMouse();
@@ -140,7 +152,7 @@ export class CampaignScene {
     else if (e.key === '1') this.setSpeed(1);
     else if (e.key === '2') this.setSpeed(3);
     else if (e.key === 'Tab') { e.preventDefault(); this.centerOnCompany(1); }
-    else if (e.key === 'Escape') this.campaign.company.stop();
+    else if (e.key === 'Escape') this.campaign.party.stop();
   }
 
   showHelp() { this.hud.showHelp(); }
@@ -153,7 +165,7 @@ export class CampaignScene {
     if (this.speed > 0 && !this.campaign.pendingEncounter) {
       this.campaign.update((dt / HOUR_SECONDS) * this.speed);
       // Keep the company in view while it marches, unless the player is looking elsewhere.
-      if (this.campaign.company.moving && !this.app.keys.size) this.centerOnCompany(0.03);
+      if (this.campaign.party.moving && !this.app.keys.size) this.centerOnCompany(0.03);
       this.hudTick = (this.hudTick || 0) + dt;
       if (this.hudTick > 0.2) { this.hudTick = 0; this.hud.refresh(); }
     }

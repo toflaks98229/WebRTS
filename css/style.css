@@ -288,3 +288,58 @@ kbd {
 }
 .site-chip .sn { font-family: var(--display); font-size: 13px; color: #eadfc0; }
 .site-chip .st { font-size: 11px; color: var(--muted); }
+
+/* ═════════════════════════ settlement screen ═══════════════════════ */
+.modal-box.wide { min-width: min(880px, 92vw); max-width: min(880px, 92vw); }
+.modal-box.wide #modal-body { max-height: 62vh; }
+
+.sp-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--edge); margin-bottom: 10px;
+}
+.sp-purse { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.sp-purse b { color: var(--gold); font-size: 15px; font-family: var(--display); }
+.sp-sep { width: 1px; height: 14px; background: var(--edge); margin: 0 6px; }
+
+.sp-flash {
+  font-size: 12px; color: #d9c48b; background: #241f16;
+  border: 1px solid var(--gold-dim); border-radius: 3px; padding: 6px 10px; margin-bottom: 10px;
+}
+.sp-h {
+  font-family: var(--display); font-size: 12px; letter-spacing: .14em; color: var(--gold);
+  margin: 14px 0 6px; text-transform: uppercase;
+}
+.sp-h:first-child { margin-top: 0; }
+
+.sp-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px; border: 1px solid var(--edge); border-radius: 3px;
+  background: #1c1813; margin-bottom: 6px;
+}
+.sp-row:hover { border-color: var(--edge-hi); }
+.sp-main { flex: 1; min-width: 0; }
+.sp-name { font-size: 13px; color: #eadfc0; }
+.sp-tag {
+  font-size: 10px; color: var(--muted); border: 1px solid var(--edge);
+  border-radius: 2px; padding: 0 5px; margin-left: 4px;
+}
+.sp-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.sp-meta { font-size: 11px; color: #a99c82; margin-top: 3px; }
+.sp-meta b { color: var(--text); font-weight: 600; }
+.sp-warn { color: #d97a2b !important; }
+.sp-btns { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.sp-btns .btn { font-size: 11px; padding: 5px 9px; }
+.sp-empty { color: var(--muted); font-style: italic; font-size: 12px; padding: 10px 2px; }
+.sp-picker { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.sp-picker .btn { font-size: 11px; padding: 4px 8px; }
+.sp-picker .btn em { color: var(--muted); font-style: normal; font-size: 10px; margin-left: 4px; }
+
+/* contracts on the campaign action bar */
+.contract-chip {
+  display: flex; flex-direction: column; gap: 2px; padding: 5px 11px;
+  border: 1px solid var(--gold-dim); border-radius: 3px; background: #241f16; max-width: 260px;
+}
+.contract-chip .cn { font-size: 12px; color: #eadfc0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contract-chip .cd { font-size: 10px; color: var(--muted); }
+.purse { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.purse b { color: var(--gold); font-family: var(--display); font-size: 15px; }

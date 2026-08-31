@@ -9,9 +9,10 @@ import { Campaign } from './campaign/campaign.js';
 import { CampaignScene } from './scenes/campaignScene.js';
 import { BattleScene } from './scenes/battleScene.js';
 
-export const COMPANY_SIZE = 6;
+/** How many brothers the company can field at once. */
+export const MAX_COMPANY_SIZE = 9;
 const STARTING_KINDS = ['sellsword', 'brawler', 'militia', 'militia', 'poacher', 'daytaler'];
-const RECRUIT_KINDS = ['brawler', 'militia', 'poacher', 'daytaler', 'farmhand'];
+const STARTING_CROWNS = 900;
 
 /**
  * Application shell. Owns the canvas, the persistent company and the two
@@ -26,6 +27,7 @@ class App {
     this.mouse = null;
     this.dragging = null;
     this.spriteBank = null;
+    this.maxCompanySize = MAX_COMPANY_SIZE;
 
     overlay.init();
     this.battleHud = new HUD();
@@ -41,11 +43,16 @@ class App {
   }
 
   newCampaign() {
-    this.roster = STARTING_KINDS.map((k) => new Unit(TEMPLATES[k], this.rng, { faction: 'player' }));
-    this.campaign = new Campaign({ seed: this.rng.int(0, 1e9), cols: 28, rows: 18, roster: this.roster });
+    const roster = STARTING_KINDS.map((k) => new Unit(TEMPLATES[k], this.rng, { faction: 'player' }));
+    this.campaign = new Campaign({
+      seed: this.rng.int(0, 1e9), cols: 28, rows: 18, roster, crowns: STARTING_CROWNS,
+    });
     this.campaignScene = new CampaignScene(this, this.campaign);
     this.setScene(this.campaignScene);
   }
+
+  /** The company's roster, purse and stash - the state that outlives a battle. */
+  get company() { return this.campaign.company; }
 
   /** LPC sheets are optional: without them the renderer draws its own figures. */
   async loadSprites() {
@@ -67,7 +74,7 @@ class App {
   // ------------------------------------------------------------ transitions
   /** Overworld contact -> tactical battle. */
   startBattle(band, biome) {
-    const fighters = this.roster.filter((u) => u.alive);
+    const fighters = this.company.alive;
     if (!fighters.length) { this.gameOver(); return; }
     // Wounds and battered armour carry into the fight; only turn state resets.
     fighters.forEach((u) => u.prepareForBattle());
@@ -77,30 +84,26 @@ class App {
       roster: fighters,
       enemies,
       biome,
-      onFinish: (result) => this.endBattle(result),
+      onFinish: (result, report) => this.endBattle(result, report),
     }));
     overlay.banner(band.name, 1400);
   }
 
-  /** Battle over -> back to the map, carrying wounds and losses with us. */
-  endBattle(result) {
-    const fallen = this.roster.filter((u) => !u.alive);
-    this.roster = this.roster.filter((u) => u.alive);
-    this.campaign.roster = this.roster;
-    for (const u of fallen) this.campaign.note(`${u.name} 이(가) 전사했다.`, 'death');
-
+  /** Battle over -> back to the map, carrying wounds, losses and loot with us. */
+  endBattle(result, report = {}) {
+    // Resolve first so the journal reads in the order things happened:
+    // the outcome, then the butcher's bill, then what was carried off.
     this.campaign.resolveEncounter(result);
-    this.setScene(this.campaignScene);
-    if (!this.roster.length) this.gameOver();
-  }
+    for (const u of this.company.buryDead()) {
+      this.campaign.note(`${u.name} 이(가) 전사했다.`, 'death');
+    }
+    for (const id of report.leftovers || []) this.company.stashItem(id);
+    if (report.leftovers?.length) {
+      this.campaign.note(`노획품 ${report.leftovers.length}점을 창고에 넣었다.`, 'loot');
+    }
 
-  /** A day in a settlement patches people up and, if there is room, hires one. */
-  hireAtSettlement() {
-    if (this.roster.length >= COMPANY_SIZE) return null;
-    const u = new Unit(TEMPLATES[this.rng.pick(RECRUIT_KINDS)], this.rng, { faction: 'player' });
-    this.roster.push(u);
-    this.campaign.roster = this.roster;
-    return u;
+    this.setScene(this.campaignScene);
+    if (!this.company.size) this.gameOver();
   }
 
   gameOver() {

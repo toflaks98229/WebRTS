@@ -13,6 +13,7 @@ function els() {
     tip: $('#hover-tip'),
     banner: $('#banner'),
     modal: $('#modal'),
+    box: $('.modal-box'),
     title: $('#modal-title'),
     body: $('#modal-body'),
     ok: $('#modal-ok'),
@@ -55,15 +56,21 @@ export const overlay = {
     bannerTimer = setTimeout(() => b.classList.add('hidden'), ms);
   },
 
-  /** `onOk` fires after the modal closes - used to gate scene transitions. */
-  modal(title, bodyHTML, onOk = null, okLabel = '확인') {
+  /**
+   * `onOk` fires after the modal closes - used to gate scene transitions.
+   * `size` adds a class to the box, e.g. 'wide' for the settlement screen.
+   */
+  modal(title, bodyHTML, onOk = null, okLabel = '확인', size = '') {
     const e = els();
     e.title.textContent = title;
     e.body.innerHTML = bodyHTML;
     e.ok.textContent = okLabel;
+    e.box.className = `modal-box ${size}`.trim();
     modalOk = onOk;
     e.modal.classList.remove('hidden');
   },
+
+  isOpen() { return !els().modal.classList.contains('hidden'); },
 
   closeModal() { els().modal.classList.add('hidden'); modalOk = null; },
 };
