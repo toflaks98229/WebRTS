@@ -46,7 +46,7 @@ export class HUD {
   renderOrder() {
     const b = this.battle;
     const html = b.order.map((u, i) => {
-      if (!u.alive) return '';
+      if (!u.alive || u.withdrawn) return '';
       const cls = [
         'to-chip', u.faction,
         i === b.turnIndex ? 'active' : '',

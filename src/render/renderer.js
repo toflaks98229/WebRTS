@@ -71,6 +71,7 @@ export class Renderer {
 
   /** Tile centre in world space, lifted to the top of its height column. */
   pixelOfHex(hex) {
+    if (!hex) return { x: 0, y: 0 };
     const p = this.layout.toPixel(hex);
     return { x: p.x, y: p.y + this.elevY(hex) };
   }
@@ -448,7 +449,7 @@ export class Renderer {
   drawUnits(ctx) {
     const s = this.layout.size;
     const units = this.battle.units
-      .filter((u) => u.alive)
+      .filter((u) => u.alive && !u.withdrawn && u.hex)
       .slice()
       .sort((a, b) => this.visual(a).y - this.visual(b).y);
 

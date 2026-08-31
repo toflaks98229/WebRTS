@@ -55,14 +55,15 @@ export class Battle {
   }
 
   // ---------------------------------------------------------------- queries
-  get living() { return this.units.filter((u) => u.alive); }
+  /** Everyone still in the fight. A unit that routed off the field is not. */
+  get living() { return this.units.filter((u) => u.alive && !u.withdrawn); }
   get players() { return this.living.filter((u) => u.faction === 'player'); }
   get enemies() { return this.living.filter((u) => u.faction === 'enemy'); }
   get current() { return this.order[this.turnIndex] || null; }
 
   unitAt(hex) {
     if (!hex) return null;
-    return this.units.find((u) => u.alive && u.hex && eq(u.hex, hex)) || null;
+    return this.units.find((u) => u.alive && !u.withdrawn && u.hex && eq(u.hex, hex)) || null;
   }
 
   enemiesOf(unit) { return this.living.filter((u) => u.faction !== unit.faction); }
@@ -112,7 +113,7 @@ export class Battle {
     const min = unit.minRange(sk);
     return this.enemiesOf(unit).filter((e) => {
       const d = distance(unit.hex, e.hex);
-      if (d > max || d < Math.min(min, 1)) return false;
+      if (d > max || d < min) return false;
       if (sk.type === 'ranged' && !this.grid.hasLineOfSight(unit.hex, e.hex)) return false;
       return true;
     });
@@ -179,7 +180,7 @@ export class Battle {
       const target = this.unitAt(targetHex);
       if (!target || target.faction === unit.faction) return false;
       const d = distance(unit.hex, target.hex);
-      if (d > unit.reach(sk) || d < Math.min(unit.minRange(sk), 1)) return false;
+      if (d > unit.reach(sk) || d < unit.minRange(sk)) return false;
       if (sk.type === 'ranged' && !this.grid.hasLineOfSight(unit.hex, target.hex)) return false;
 
       unit.spend(sk);
@@ -274,7 +275,7 @@ export class Battle {
       this.turnIndex++;
       if (this.turnIndex >= this.order.length) { this.nextRound(); return; }
       const u = this.order[this.turnIndex];
-      if (!u || !u.alive) continue;
+      if (!u || !u.alive || u.withdrawn) continue;
       // A unit that used "wait" resumes its existing AP instead of a fresh turn.
       if (u.turnRound !== this.round) { u.beginTurn(); u.turnRound = this.round; }
       this.bus.emit('turn:start', { unit: u });

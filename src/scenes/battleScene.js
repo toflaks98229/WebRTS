@@ -118,7 +118,7 @@ export class BattleScene {
     this.hud.showBanner(result === 'victory' ? '승리' : '패배', 2400);
     const fallenEnemies = this.battle.units.filter((u) => u.faction === 'enemy' && !u.alive);
     const spoils = result === 'victory'
-      ? salvage(this.roster.filter((u) => u.alive), fallenEnemies)
+      ? salvage(this.roster.filter((u) => u.alive && !u.withdrawn), fallenEnemies)
       : { changes: [], leftovers: [] };
     this.loot = spoils.changes;
     this.leftovers = spoils.leftovers;
@@ -131,7 +131,8 @@ export class BattleScene {
     const rule = '<hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">';
     const ups = this.battle.levelUps || [];
     const rows = survivors.map((u) =>
-      `<div class="gear-row"><i>${esc(u.name)}</i><em>체력 ${Math.max(0, Math.round(u.hp))}/${u.hpMax} · 처치 ${u.kills}</em></div>`).join('');
+      `<div class="gear-row"><i>${esc(u.name)}${u.withdrawn ? ' <b style="color:#d8b447">이탈</b>' : ''}</i>`
+      + `<em>체력 ${Math.max(0, Math.round(u.hp))}/${u.hpMax} · 처치 ${u.kills}</em></div>`).join('');
 
     overlay.modal(result === 'victory' ? '전투 승리' : '패주', `
       ${result === 'victory'

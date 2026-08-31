@@ -316,6 +316,8 @@ export class Campaign {
       this.company.remove(quitter);
       this.company.debtDays = 0;
       this.note(`${quitter.name} 이(가) 삯을 못 받고 떠났다.`, 'debt');
+      const promoted = this.company.ensureCaptain();
+      if (promoted) this.note(`${promoted.name} 이(가) 새 단장이 되었다.`, 'renown');
       this.bus.emit('desertion', { unit: quitter });
     }
   }

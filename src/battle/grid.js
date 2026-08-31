@@ -128,10 +128,10 @@ export class Grid {
     }
   }
 
-  /** Flood fill from the left deployment zone; carve anything unreachable. */
-  ensureConnected(rng) {
+  /** Keys of every passable tile reachable on foot from the left deployment zone. */
+  floodPassable() {
     const start = this.all().find((t) => t.col === 0 && this.passable(t.hex));
-    if (!start) return;
+    if (!start) return null;
     const seen = new Set([key(start.hex)]);
     const queue = [start.hex];
     while (queue.length) {
@@ -143,9 +143,45 @@ export class Grid {
         queue.push(nb);
       }
     }
-    for (const t of this.all()) {
-      if (!seen.has(key(t.hex)) && !TERRAIN[t.terrain].passable) {
-        t.terrain = rng.chance(50) ? 'grass' : 'dirt';
+    return seen;
+  }
+
+  /**
+   * Open up any ground the flood fill could not reach.
+   *
+   * Only walls that actually cut a pocket off get carved. Testing `!passable`
+   * instead would match *every* rock and pond on the map - none of them are in
+   * the fill, because the fill only ever walks on passable tiles - and quietly
+   * delete the obstacles the field is built around.
+   */
+  ensureConnected(rng) {
+    const ground = () => (rng.chance(50) ? 'grass' : 'dirt');
+
+    for (let pass = 0; pass < 6; pass++) {
+      const reached = this.floodPassable();
+      if (!reached) return;
+      const stranded = this.all().filter((t) => this.passable(t.hex) && !reached.has(key(t.hex)));
+      if (!stranded.length) return;
+
+      // Knock through a wall tile that touches both the main body and a pocket.
+      let opened = false;
+      for (const t of this.all()) {
+        if (TERRAIN[t.terrain].passable) continue;
+        let main = false;
+        let pocket = false;
+        for (const nb of neighbors(t.hex)) {
+          if (!this.has(nb)) continue;
+          if (reached.has(key(nb))) main = true;
+          else if (this.passable(nb)) pocket = true;
+        }
+        if (main && pocket) { t.terrain = ground(); opened = true; }
+      }
+
+      // Nothing bridges the gap, so wall the pocket off rather than leave a
+      // patch of ground nobody can ever stand on.
+      if (!opened) {
+        for (const t of stranded) t.terrain = 'rock';
+        return;
       }
     }
   }

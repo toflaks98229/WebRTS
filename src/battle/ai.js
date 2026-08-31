@@ -1,4 +1,5 @@
-import { distance } from '../hex/hex.js';
+import { distance, key } from '../hex/hex.js';
+import { findPath } from '../hex/pathfind.js';
 import { SKILLS } from '../data/skills.js';
 
 /**
@@ -16,6 +17,9 @@ export class AI {
   step(unit) {
     const b = this.battle;
     if (!unit || !unit.alive || b.phase !== 'playing') return false;
+    // A unit that has already routed off the map is still `battle.current`
+    // until the turn is handed back, and it no longer stands anywhere.
+    if (unit.withdrawn || !unit.hex) return false;
     if (this.actionsThisTurn++ > 8) return false;
 
     if (unit.isFleeing) return this.flee(unit);
@@ -128,6 +132,11 @@ export class AI {
   /**
    * Fallback when scoring finds nothing better than standing still: step as far
    * toward the nearest enemy as the remaining AP allows.
+   *
+   * Route first, straight line second. Around a rock wall, *every* tile that
+   * makes progress is the same distance from the enemy or further, so a
+   * distance-only rule sees no move worth making and both armies stand there
+   * for the rest of the battle.
    */
   advance(unit) {
     const b = this.battle;
@@ -135,6 +144,16 @@ export class AI {
     if (!foes.length) return false;
     const map = b.reachableFor(unit);
     if (!map.size) return false;
+
+    const goal = foes.reduce((a, f) => (distance(unit.hex, f.hex) < distance(unit.hex, a.hex) ? f : a));
+    const route = findPath(unit.hex, goal.hex, b.moveContext(unit));
+    if (route && route.length > 2) {
+      // Furthest point of the route we can still pay for this turn; the last
+      // entry is the enemy's own tile, which nobody can step onto.
+      for (let i = route.length - 2; i >= 1; i--) {
+        if (map.has(key(route[i]))) return b.moveUnit(unit, route[i]);
+      }
+    }
 
     const distOf = (h) => Math.min(...foes.map((f) => distance(h, f.hex)));
     const here = distOf(unit.hex);
@@ -156,7 +175,7 @@ export class AI {
 
   scoreMeleeTile(unit, node, foes) {
     const b = this.battle;
-    const reach = unit.weapon?.range || 1;
+    const reach = unit.reach();
     let score = 0;
 
     const inReach = foes.filter((f) => distance(node.hex, f.hex) <= reach);
@@ -193,11 +212,12 @@ export class AI {
   scoreRangedTile(unit, node, foes) {
     const b = this.battle;
     const max = unit.weapon?.range || 5;
+    const min = unit.weapon?.minRange || 1;
     let score = 0;
 
     const shootable = foes.filter((f) => {
       const d = distance(node.hex, f.hex);
-      return d >= 2 && d <= max && b.grid.hasLineOfSight(node.hex, f.hex);
+      return d >= min && d <= max && b.grid.hasLineOfSight(node.hex, f.hex);
     });
     score += Math.min(shootable.length, 3) * 14;
     if (shootable.length) {
@@ -259,9 +279,11 @@ export class AI {
     if (!best) return false;
     b.moveUnit(unit, best.hex);
 
-    // Made it off the field - the unit routs for good.
+    // Made it off the field. The unit is out of this fight but not dead: a
+    // brother who breaks and runs still walks back to the company afterwards.
     if (this.edgeDistance(unit.hex) === 0) {
-      unit.alive = false;
+      unit.withdrawn = true;
+      unit.hex = null;
       b.log(`${unit.name} 이(가) 전장에서 달아났다.`, 'death', unit.faction);
       b.bus.emit('unit:flee', { unit });
       b.checkBattleOver();

@@ -72,6 +72,7 @@ export class Unit {
     this.morale = 'steady';
     this.alive = true;
     this.stunned = 0;
+    this.withdrawn = false;     // ran off the field; out of the fight, not dead
     this.overwhelmed = 0;       // rounds of the Overwhelm penalty left
     this.livesUsed = false;     // Nine Lives, once per battle
     this.stances = new Set();
@@ -216,10 +217,16 @@ export class Unit {
     return ids.map((id) => SKILLS[id]).filter(Boolean);
   }
 
+  /**
+   * How far this skill can strike. A bow or a javelin's `range` is how far the
+   * missile flies, not how far its owner can stab with it, so anything with a
+   * minimum range falls back to arm's length in melee.
+   */
   reach(sk) {
-    if (!this.weapon) return 1;
-    if (sk?.type === 'ranged') return this.weapon.range;
-    return this.weapon.range || 1;
+    const w = this.weapon;
+    if (!w) return 1;
+    if (sk?.type === 'ranged') return w.range || 1;
+    return w.minRange ? 1 : (w.range || 1);
   }
 
   minRange(sk) {
@@ -253,6 +260,7 @@ export class Unit {
     this.ap = this.maxAP;
     this.morale = 'steady';
     this.stunned = 0;
+    this.withdrawn = false;
     this.overwhelmed = 0;
     this.livesUsed = false;
     this.stances.clear();

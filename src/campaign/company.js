@@ -66,7 +66,10 @@ export class Company {
 
   // ---------------------------------------------------------------- stash
   stashItem(id) { if (id) this.stash.push(id); }
-  stashValue() { return this.stash.reduce((s, id) => s + (itemValue(id) * this.sellRate), 0); }
+  /** What `sellAllStash` will actually pay - rounded per item, as the sale is. */
+  stashValue() {
+    return this.stash.reduce((s, id) => s + Math.round(itemValue(id) * this.sellRate), 0);
+  }
 
   /** Sell one stashed item; returns the crowns gained, or 0 if not held. */
   get sellRate() { return SELL_RATE * (this.captainPerks.has('haggler') ? 1.15 : 1); }

@@ -26,6 +26,12 @@ export function hitChance(battle, attacker, target, sk) {
   const def = ranged ? target.rangedDefense : target.meleeDefense;
   parts.push({ label: ranged ? '대상 원거리 방어' : '대상 근접 방어', value: -def });
 
+  // Ground that is hard to fight on. The defender's getters have no idea which
+  // tile they are standing on, so the terrain is priced here instead.
+  const footing = battle.grid.terrainAt(target.hex);
+  const foot = footing.penalty && (ranged ? footing.penalty.rangedDefense : footing.penalty.meleeDefense);
+  if (foot) parts.push({ label: `${footing.name} 지형`, value: -foot });
+
   const morHit = attacker.moraleHit;
   if (morHit) parts.push({ label: `사기(${MORALE[attacker.morale].name})`, value: morHit });
 
