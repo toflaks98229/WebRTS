@@ -4,6 +4,15 @@ Battle Brothers 를 모델로 한 웹 게임. **캠페인 지도**에서 용병�
 적 무리와 부딪히면 **헥스 전술 전투**로 전환됩니다.
 빌드 도구 없이 순수 HTML + ES 모듈 + Canvas 2D 로 동작합니다.
 
+## 아트
+
+지형 · 유닛 · UI 아이콘이 전부 [Dungeon Crawl Stone Soup](https://github.com/crawl/crawl)
+의 32px 타일(CC0)이고, **모두 같은 배율로 그립니다.** 소스 픽셀 하나가 화면에서
+언제나 같은 크기라 픽셀 격자가 어긋나지 않습니다.
+
+정사각 타일을 육각형에 입히는 방법과 경계를 번지게 하는 방법은
+[CREDITS.md](CREDITS.md) 에 정리해 두었습니다.
+
 ## 실행
 
 ES 모듈은 `file://` 에서 로드되지 않으므로 로컬 서버가 필요합니다.
@@ -14,19 +23,15 @@ npm start
 
 그 뒤 <http://localhost:5173> 을 엽니다. (의존성 없음 — `serve.js` 는 Node 표준 라이브러리만 씁니다.)
 
-에셋을 처음 받으려면:
-
-```bash
-node tools/fetch-lpc.mjs
-```
+아트를 처음 받으려면:
 
 ```bash
 node tools/fetch-dcss.mjs
 ```
 
-앞은 캐릭터 스프라이트(LPC), 뒤는 UI 아이콘과 지형 타일(DCSS)입니다. 둘 다 없어도
-게임은 그대로 실행됩니다 — 지형은 단색으로, 유닛은 자체 도형으로, 아이콘은
-이모지로 되돌아갑니다.
+Dungeon Crawl Stone Soup 의 32px 타일로 지형 · 유닛 · UI 아이콘을 전부 채웁니다.
+없어도 게임은 그대로 실행됩니다 — 지형은 단색으로, 유닛은 자체 도형으로,
+아이콘은 이모지로 되돌아갑니다.
 
 ## 조작
 
@@ -104,7 +109,7 @@ node tools/fetch-dcss.mjs
 `grep colossus src/` 하면 그 특성이 하는 일이 전부 나온다.
 
 아이콘은 [Dungeon Crawl Stone Soup](https://github.com/crawl/crawl) 의 32px 타일이라
-LPC 스프라이트와 같은 픽셀 아트 결을 유지한다. 화면은 전장과 같은 **육각형 노드**로 짜여 있다. 왼쪽 티어 레일이 도달한
+전장의 유닛·지형과 같은 결을 유지한다. 화면은 전장과 같은 **육각형 노드**로 짜여 있다. 왼쪽 티어 레일이 도달한
 줄까지 금색으로 채워지고, 잠긴 줄은 `N 레벨` 배지와 함께 물러난다.
 노드는 **습득 · 가능 · 대기 · 잠김** 네 상태로 구분되고, 남은 점수는
 머리말의 진행 링이 알린다. 마우스를 올리면 전체 설명과 지금 왜 못 찍는지가
@@ -158,10 +163,7 @@ LPC 스프라이트와 같은 픽셀 아트 결을 유지한다. 화면은 전�
 index.html            화면 구성
 css/style.css         UI 스타일
 serve.js              의존성 없는 정적 서버
-tools/fetch-lpc.mjs   LPC 스프라이트 선별 다운로더
-tools/fetch-dcss.mjs  DCSS UI 아이콘 다운로더 (라이선스 제외 목록 검사 포함)
-
-tools/lpc-attribution.mjs  에셋 출처 표기 자동 생성
+tools/fetch-dcss.mjs  DCSS 아트 다운로더 (라이선스 제외 목록 검사 포함)
 
 src/
   main.js             앱 셸 — 캔버스, 지속되는 용병단, 씬 전환, 입력 라우팅
@@ -176,8 +178,8 @@ src/
   battle/             grid(높이맵) · unit · combat(명중·피해) · battle(턴 진행) · ai
   campaign/           world(맵 생성) · campaign(시간·부대·조우·계약·급여)
                       company(명부·금고·창고) · contracts · bands · loot
-  render/             camera · renderer(전장) · worldRenderer(지도) · sprites(LPC)
-                      terrainAtlas(DCSS 지형 패턴) · effects
+  render/             camera · renderer(전장) · worldRenderer(지도)
+                      terrainAtlas(지형 패턴·경계 블렌딩) · dollBank(페이퍼돌) · effects
   ui/                 overlay(공용) · hud(전투) · worldHud(지도)
                       settlementPanel(마을) · characterPanel(특성·단장 트리)
                       perkView(특성 노드 공용 렌더) · icons(DCSS 타일 로더)
@@ -192,9 +194,7 @@ src/
 | 대상 | 라이선스 |
 | --- | --- |
 | 코드 | GPL-3.0-or-later — [LICENSE](LICENSE) |
-| 캐릭터 아트 (`assets/lpc/`) | 파일마다 상이 — [ATTRIBUTION.md](assets/lpc/ATTRIBUTION.md) |
-| UI 아이콘 · 지형 타일 (`assets/dcss/`) | CC0 1.0 — Dungeon Crawl Stone Soup |
+| 아트 (`assets/dcss/`) | CC0 1.0 — Dungeon Crawl Stone Soup |
 
-번들된 LPC 아트는 CC0 · CC-BY · CC-BY-SA · OGA-BY · GPL 이 섞여 있고, 일부는
-CC-BY-SA 3.0 단독이라 GPL 로 덮을 수 없습니다. 재배포 시 조건은
-[CREDITS.md](CREDITS.md) 를 확인하세요.
+아트가 전부 CC0라 아트 때문에 프로젝트 라이선스가 제약받지 않습니다.
+자세한 사항은 [CREDITS.md](CREDITS.md).

@@ -42,7 +42,7 @@ export class BattleScene {
     }
 
     this.renderer = new Renderer(this.canvas, this.battle, this.layout, this.camera, this.effects);
-    this.renderer.sprites = app.spriteBank || null;
+    this.renderer.dolls = app.dollBank || null;
     this.renderer.atlas = app.terrainAtlas || null;
     this.ai = new AI(this.battle);
 

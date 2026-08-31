@@ -1,7 +1,7 @@
 import { terrain } from '../data/terrain.js';
 import { DIRS, add } from '../hex/hex.js';
 import { MORALE } from '../battle/unit.js';
-import { SpriteBank, DIR, attackAnim } from './sprites.js';
+import { DollBank } from './dollBank.js';
 
 const FACTION = {
   player: { main: '#4d7ea8', dark: '#2c4a63', light: '#8fb8d8', banner: '#c8a24a' },
@@ -10,12 +10,16 @@ const FACTION = {
 
 const MOVE_STEP_TIME = 0.16;   // seconds per hex when a unit walks
 /** World pixels per source pixel of a DCSS tile. */
-const TEX_SCALE = 2;
+/**
+ * World pixels per source pixel - shared by the ground, the trees and the
+ * fighters. Every piece of art is 32px DCSS work, so one ratio keeps every
+ * pixel the same size on screen; scaling one layer and not another is what
+ * makes a tiled scene look wrong.
+ */
+export const PIXEL = 2;
 /** Screen height of one height-map level, as a fraction of the hex size. */
 export const ELEV_RATIO = 0.45;
 const ATTACK_TIME = 0.45;      // seconds an attack animation plays
-const WALK_FPS = 11;
-const IDLE_FPS = 2;
 
 /** Canvas renderer for the tactical layer. Owns unit visual interpolation. */
 export class Renderer {
@@ -28,8 +32,8 @@ export class Renderer {
     this.effects = effects;
     this.visuals = new Map();
     this.time = 0;
-    /** Set by the controller once the LPC sheets finish loading; null = procedural. */
-    this.sprites = null;
+    /** DCSS paper dolls, set once loaded; null = procedural figures. */
+    this.dolls = null;
     /** DCSS ground textures; null = flat colours. */
     this.atlas = null;
 
@@ -79,8 +83,8 @@ export class Renderer {
       v = {
         x: p.x, y: p.y, queue: [], t: 0, from: null, to: null,
         bob: Math.random() * 6, flash: 0,
-        dir: unit.faction === 'player' ? DIR.right : DIR.left,
-        anim: 'idle', frame: 0, attackUntil: 0,
+        face: unit.faction === 'player' ? 1 : -1,
+        attackUntil: 0, lean: 0, leanX: 0, leanY: 0, walking: false,
       };
       this.visuals.set(unit.id, v);
     }
@@ -92,15 +96,21 @@ export class Renderer {
     for (const h of path) v.queue.push(this.pixelOfHex(h));
   }
 
-  /** Kick off an attack animation and turn the attacker to face its target. */
+  /**
+   * A doll has no swing frames, so an attack is a lean into the blow: the
+   * fighter drives toward the target and settles back.
+   */
   playAttack(attacker, target) {
     const v = this.visual(attacker);
-    v.anim = attackAnim(attacker.weapon);
-    v.frame = 0;
     v.attackUntil = this.time + ATTACK_TIME;
     const tp = this.pixelOfHex(target.hex);
-    v.dir = tp.x >= v.x ? DIR.right : DIR.left;
-    this.visual(target).dir = tp.x >= v.x ? DIR.left : DIR.right;
+    const dx = tp.x - v.x;
+    const dy = tp.y - v.y;
+    const len = Math.hypot(dx, dy) || 1;
+    v.leanX = dx / len;
+    v.leanY = dy / len;
+    v.face = dx >= 0 ? 1 : -1;
+    this.visual(target).face = dx >= 0 ? -1 : 1;
   }
 
   /** True while any unit is still sliding between hexes. */
@@ -116,7 +126,7 @@ export class Renderer {
         v.from = { x: v.x, y: v.y };
         v.to = v.queue.shift();
         v.t = 0;
-        if (v.to.x !== v.from.x) v.dir = v.to.x > v.from.x ? DIR.right : DIR.left;
+        if (v.to.x !== v.from.x) v.face = v.to.x > v.from.x ? 1 : -1;
       }
       if (v.to) {
         v.t += dt / MOVE_STEP_TIME;
@@ -139,17 +149,12 @@ export class Renderer {
     this.effects.update(dt);
   }
 
+  /** Static art, so motion lives here: a lunge on the swing, a step on the march. */
   advanceAnim(v, dt) {
-    const walking = !!(v.to || v.queue.length);
-    if (this.time < v.attackUntil) {
-      v.frame += dt / ATTACK_TIME * 8;       // one pass through the attack sheet
-    } else if (walking) {
-      if (v.anim !== 'walk') { v.anim = 'walk'; v.frame = 0; }
-      v.frame += dt * WALK_FPS;
-    } else {
-      if (v.anim !== 'idle') { v.anim = 'idle'; v.frame = 0; }
-      v.frame += dt * IDLE_FPS;
-    }
+    void dt;
+    v.walking = !!(v.to || v.queue.length);
+    const left = v.attackUntil - this.time;
+    v.lean = left > 0 ? Math.sin((1 - left / ATTACK_TIME) * Math.PI) : 0;
   }
 
   // ------------------------------------------------------------- drawing
@@ -228,7 +233,7 @@ export class Renderer {
       // One pre-composed image per hex: its ground plus whatever the
       // neighbours bleed over the edges.
       const tex = this.atlas && this.atlas.tileCanvas(
-        this.layout, tile, this.edgesOf(tile), def, TEX_SCALE);
+        this.layout, tile, this.edgesOf(tile), def, PIXEL);
       if (tex) {
         ctx.drawImage(tex.canvas, tex.ox, tex.oy + dy);
         // A wash of the terrain colour keeps the palette coherent with the UI.
@@ -268,8 +273,9 @@ export class Renderer {
     for (let i = front.length - 1; i >= 0; i--) ctx.lineTo(front[i].x, front[i].y + dy + depth);
     ctx.closePath();
 
-    // Cliffs are rock whatever grows on top of them.
-    const rock = this.atlas?.pattern(ctx, 'rock', TEX_SCALE);
+    // Cliffs are bare stone whatever grows on top of them.
+    const rock = this.atlas?.pattern(ctx, 'cliff', PIXEL)
+      || this.atlas?.pattern(ctx, 'rock', PIXEL);
     if (rock) { ctx.fillStyle = rock; ctx.fill(); }
 
     const grad = ctx.createLinearGradient(0, pts[1].y + dy, 0, pts[1].y + dy + depth);
@@ -373,18 +379,17 @@ export class Renderer {
     }
   }
 
-  /** Three DCSS trees scattered inside the hex, back-to-front. */
+  /**
+   * One tree per forest hex. At the shared pixel ratio a DCSS tree is already
+   * most of a hex wide - it stands for the whole thicket, not a single trunk -
+   * so scattering several would just pile them into the neighbours.
+   */
   drawTrees(ctx, tile, c, s) {
     const img = this.atlas.decor('tree', tile.decor);
     if (!img) return;
-    const w = s * 0.85;
-    const spots = [];
-    for (let i = 0; i < 3; i++) {
-      const a = tile.decor * 6.28 + i * 2.1;
-      spots.push({ x: c.x + Math.cos(a) * s * 0.34, y: c.y + Math.sin(a) * s * 0.28 });
-    }
-    spots.sort((p, q) => p.y - q.y);
-    for (const p of spots) ctx.drawImage(img, p.x - w / 2, p.y - w * 0.78, w, w);
+    const w = img.width * PIXEL;                       // never rescaled
+    const jitter = (tile.decor - 0.5) * s * 0.18;      // a little sway off centre
+    ctx.drawImage(img, c.x - w / 2 + jitter, c.y + s * 0.3 - w, w, w);
   }
 
   drawOverlays(ctx) {
@@ -458,8 +463,11 @@ export class Renderer {
     const col = FACTION[u.faction];
     const x = v.x;
     const y = v.y;
-    // Sprites carry their own idle motion; the procedural figures need the bob.
-    const bob = this.sprites ? 0 : Math.sin(this.time * 2 + v.bob) * (isCurrent ? 1.5 : 0.6);
+    // A doll is one static frame, so its life comes from here: a march step
+    // while moving, a slow breath when still.
+    const bob = v.walking
+      ? -Math.abs(Math.sin(this.time * 13)) * s * 0.07
+      : Math.sin(this.time * 2 + v.bob) * (isCurrent ? 1.5 : 0.6);
 
     ctx.save();
     ctx.translate(x, y + bob);
@@ -491,14 +499,13 @@ export class Renderer {
     const armorCol = u.isBeast ? '#6a5a44' : shade('#5a5148', '#9aa3ab', bodyTone);
 
     let drewSprite = false;
-    if (this.sprites && !u.isBeast) {
-      drewSprite = this.sprites.draw(ctx, u, {
-        anim: v.anim,
-        dir: v.dir,
-        frame: Math.floor(v.frame),
-        x: 0,
-        y: s * 0.3,
-        scale: s / 30,
+    if (this.dolls) {
+      const reach = v.lean * s * 0.34;
+      drewSprite = this.dolls.draw(ctx, u, {
+        x: v.leanX * reach,
+        y: s * 0.3 + v.leanY * reach * 0.5,
+        scale: PIXEL,
+        flip: v.face < 0,
       });
     }
     if (!drewSprite) {

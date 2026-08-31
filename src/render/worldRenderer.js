@@ -149,13 +149,10 @@ export class WorldRenderer {
       if (t.terrain === 'mountain' || t.terrain === 'peak') { this.drawPeak(ctx, t, c, s); return; }
       if (t.terrain === 'forest') {
         const img = this.atlas.decor('tree', r);
+        // One tree, drawn at the map's pixel ratio like everything else.
         if (img) {
-          for (let i = 0; i < 2; i++) {
-            const a = r * 6.28 + i * 2.6;
-            const x = c.x + Math.cos(a) * s * 0.26;
-            const y = c.y + Math.sin(a) * s * 0.2;
-            ctx.drawImage(img, x - s * 0.34, y - s * 0.5, s * 0.68, s * 0.68);
-          }
+          const w = img.width * TEX_SCALE;
+          ctx.drawImage(img, c.x - w / 2 + (r - 0.5) * s * 0.2, c.y + s * 0.28 - w, w, w);
         }
       }
       return;

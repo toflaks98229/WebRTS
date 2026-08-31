@@ -8,8 +8,6 @@
   "scripts": {
     "start": "node serve.js",
     "dev": "node serve.js 5173",
-    "assets": "node tools/fetch-lpc.mjs",
-    "attribution": "node tools/lpc-attribution.mjs",
-    "icons": "node tools/fetch-dcss.mjs"
+    "assets": "node tools/fetch-dcss.mjs"
   }
 }

@@ -2,8 +2,7 @@
  * DCSS tile icons for the interface.
  *
  * Every call takes an emoji fallback, so the UI is fully usable before the
- * manifest loads and stays usable if `assets/dcss/` was never fetched - the
- * same deal the LPC sprites get on the battlefield.
+ * manifest loads and stays usable if `assets/dcss/` was never fetched.
  *
  * Art: Dungeon Crawl Stone Soup (CC0). See CREDITS.md.
  */

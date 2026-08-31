@@ -1,7 +1,7 @@
 import { Unit } from './battle/unit.js';
 import { TEMPLATES } from './data/units.js';
 import { RNG } from './core/rng.js';
-import { SpriteBank } from './render/sprites.js';
+import { DollBank } from './render/dollBank.js';
 import { icons } from './ui/icons.js';
 import { TerrainAtlas } from './render/terrainAtlas.js';
 import { HUD } from './ui/hud.js';
@@ -29,7 +29,7 @@ class App {
     this.keys = new Set();
     this.mouse = null;
     this.dragging = null;
-    this.spriteBank = null;
+    this.dollBank = null;
     this.maxCompanySize = MAX_COMPANY_SIZE;
 
     overlay.init();
@@ -60,7 +60,7 @@ class App {
   /** The company's roster, purse and stash - the state that outlives a battle. */
   get company() { return this.campaign.company; }
 
-  /** Both asset packs are optional; the UI falls back on emoji and shapes. */
+  /** Art is optional throughout; without it the game draws its own shapes. */
   async loadSprites() {
     // Icons arrive after the first paint; nudge the live HUD so they appear.
     icons.load('assets/dcss').then((ok) => { if (ok) this.scene?.hud?.refresh?.(); });
@@ -70,10 +70,10 @@ class App {
         this.scene.renderer.atlas = atlas;
       }
     });
-    const bank = await SpriteBank.load('assets/lpc');
+    const bank = await DollBank.load('assets/dcss');
     if (!bank) return;
-    this.spriteBank = bank;
-    if (this.scene?.renderer && 'sprites' in this.scene.renderer) this.scene.renderer.sprites = bank;
+    this.dollBank = bank;
+    if (this.scene?.renderer && 'dolls' in this.scene.renderer) this.scene.renderer.dolls = bank;
   }
 
   setMode(mode) { document.getElementById('app').className = `mode-${mode}`; }

@@ -132,7 +132,11 @@ const TERRAIN = {
   'terrain.dirt':   [0, 1, 2, 3].map((i) => `dngn/floor/mud${i}.png`),
   'terrain.swamp':  [0, 1, 2, 3].map((i) => `dngn/floor/bog_green${i}.png`),
   'terrain.hill':   [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
-  'terrain.rock':   [0, 1, 2, 3].map((i) => `dngn/wall/stone2_brown${i}.png`),
+  // Masonry reads as a dungeon wall, mortar courses and all. Natural stone is
+  // what a boulder field and a cliff face need.
+  'terrain.rock':   [0, 1, 2, 3].map((i) => `dngn/floor/limestone${i}.png`),
+  // The extruded side of a raised tile: darker than anything it sits under.
+  'terrain.cliff':  [0, 1, 2, 3].map((i) => `dngn/floor/grey_dirt${i}.png`),
   'terrain.water':  ['dngn/water/deep_water.png', 'dngn/water/deep_water2.png'],
 
   // overworld
@@ -143,13 +147,62 @@ const TERRAIN = {
   'terrain.farmland': [0, 1, 2].map((i) => `dngn/floor/dirt${i}.png`),
   'terrain.steppe':   [0, 1, 2, 3].map((i) => `dngn/floor/moss${i}.png`),
   'terrain.hills':    [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
-  // Masonry walls read as dungeon on a world map, so mountains get scree and
-  // keep their drawn silhouette on top.
+  // Mountains get brown scree and peaks bare pale stone; both keep their drawn
+  // silhouette on top. Wall tiles are masonry and would read as a dungeon.
   'terrain.mountain': [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
-  'terrain.peak':     [0, 1, 2, 3].map((i) => `dngn/wall/stone2_gray${i}.png`),
+  'terrain.peak':     [0, 1, 2, 3].map((i) => `dngn/floor/limestone${i}.png`),
 
   // decor drawn on top of the ground. tree1/tree2 are on the exclusion list.
   'decor.tree': [3, 5, 7, 9].map((i) => `dngn/trees/tree${i}.png`),
+};
+
+/**
+ * Paper-doll parts. DCSS composes a character from stacked 32x32 layers exactly
+ * the way this game already models equipment, so a looted mail shirt still
+ * shows up on the man wearing it.
+ */
+const DOLL = {
+  'doll.base.0': 'player/base/human_m.png',
+  'doll.base.1': 'player/base/human2_m.png',
+  'doll.base.2': 'player/base/human3_m.png',
+  'doll.legs':      'player/legs/pants_brown.png',
+  'doll.legsArmor': 'player/legs/leg_armour00.png',
+
+  'doll.body.rags':         'player/body/animal_skin.png',
+  'doll.body.gambeson':     'player/body/robe_brown.png',
+  'doll.body.leatherArmor': 'player/body/leather_armour.png',
+  'doll.body.mailShirt':    'player/body/chainmail.png',
+  'doll.body.scaleArmor':   'player/body/scalemail.png',
+  'doll.body.plateArmor':   'player/body/plate.png',
+
+  'doll.head.hood':       'player/head/hat_black.png',
+  'doll.head.leatherCap': 'player/head/cap_black1.png',
+  'doll.head.mailCoif':   'player/head/chain.png',
+  'doll.head.kettleHat':  'player/head/helm_plume.png',
+  'doll.head.nasalHelm':  'player/head/fhelm_gray3.png',
+  'doll.head.greatHelm':  'player/head/full_black.png',
+
+  'doll.weapon.shortSword':  'player/hand1/short_sword.png',
+  'doll.weapon.armingSword': 'player/hand1/long_sword_slant.png',
+  'doll.weapon.greatsword':  'player/hand1/sword_two.png',
+  'doll.weapon.handAxe':     'player/hand1/axe_short.png',
+  'doll.weapon.battleAxe':   'player/hand1/battleaxe.png',
+  'doll.weapon.woodenClub':  'player/hand1/club.png',
+  'doll.weapon.mace':        'player/hand1/mace.png',
+  'doll.weapon.warhammer':   'player/hand1/hammer_two.png',
+  'doll.weapon.spear':       'player/hand1/spear.png',
+  'doll.weapon.pike':        'player/hand1/spear2.png',
+  'doll.weapon.dagger':      'player/hand1/dagger.png',
+  'doll.weapon.shortBow':    'player/hand1/bow.png',
+  'doll.weapon.warBow':      'player/hand1/bow.png',
+  'doll.weapon.crossbow':    'player/hand1/arbalest.png',
+  'doll.weapon.javelin':     'player/hand1/trident.png',
+
+  'doll.shield.woodenShield': 'player/hand2/buckler_round.png',
+  'doll.shield.heaterShield': 'player/hand2/kite_shield_kite1.png',
+  'doll.shield.kiteShield':   'player/hand2/tower_shield_quartered.png',
+
+  'doll.beast.wolf': 'mon/animals/wolf.png',
 };
 
 async function get(url, tries = 4) {
@@ -199,8 +252,12 @@ async function main() {
     return true;
   };
 
+  manifest.doll = {};
   for (const [id, rel] of Object.entries(ICONS)) {
     if (await grab(id, rel)) manifest.icons[id] = rel;
+  }
+  for (const [id, rel] of Object.entries(DOLL)) {
+    if (await grab(id, rel)) manifest.doll[id] = rel;
   }
 
   for (const [id, list] of Object.entries(TERRAIN)) {
@@ -221,8 +278,10 @@ async function main() {
 
   await fs.writeFile(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
   const variants = Object.values(manifest.terrain).reduce((s, l) => s + l.length, 0);
-  console.log(`${Object.keys(manifest.icons).length} icons + ${variants} terrain tiles`
-    + ` (${Object.keys(manifest.terrain).length} sets), ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
+  console.log(`${Object.keys(manifest.icons).length} icons`
+    + ` + ${variants} terrain tiles (${Object.keys(manifest.terrain).length} sets)`
+    + ` + ${Object.keys(manifest.doll).length} doll parts,`
+    + ` ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
