@@ -222,6 +222,14 @@ export class Unit {
    * missile flies, not how far its owner can stab with it, so anything with a
    * minimum range falls back to arm's length in melee.
    */
+  /**
+   * The plain swing this fighter counters with. Skills that carry an effect -
+   * a shield bash, a shield split - are set-up moves, not reactions.
+   */
+  counterSkill() {
+    return this.skills.find((s) => s.type === 'melee' && !s.effect) || null;
+  }
+
   reach(sk) {
     const w = this.weapon;
     if (!w) return 1;

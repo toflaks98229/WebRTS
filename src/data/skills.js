@@ -7,7 +7,7 @@ export const SKILLS = {
   // --- Sword ---
   slash:      { id: 'slash',      name: '베기',       icon: '⚔', tile: 'skill.blade', type: 'melee',  ap: 4, fatigue: 15, hitBonus: 0,   damageMult: 1.0,  desc: '검으로 크게 베어 넘긴다.' },
   thrust:     { id: 'thrust',     name: '찌르기',     icon: '➤', tile: 'skill.blade', type: 'melee',  ap: 4, fatigue: 12, hitBonus: 15,  damageMult: 0.7,  armorMult: 0.5, desc: '정확하게 찌른다. 명중률이 높지만 피해가 낮다.' },
-  riposte:    { id: 'riposte',    name: '받아치기',   icon: '⟲', tile: 'skill.brawl', type: 'self',   ap: 4, fatigue: 25, desc: '이번 라운드 동안 근접 공격을 받으면 반격한다.', effect: 'riposte' },
+  riposte:    { id: 'riposte',    name: '받아치기',   icon: '⟲', tile: 'skill.brawl', type: 'self',   ap: 4, fatigue: 25, desc: '다음 차례까지 근접 공격을 받을 때마다 되받아친다. 명중이든 빗나감이든 반응하며, 반격 한 번마다 피로가 든다.', effect: 'riposte' },
 
   // --- Axe ---
   chop:       { id: 'chop',       name: '내려찍기',   icon: '🪓', tile: 'skill.axe', type: 'melee', ap: 4, fatigue: 16, hitBonus: -5,  damageMult: 1.0,  desc: '도끼로 강하게 내려찍는다. 방어구 파괴에 능하다.' },

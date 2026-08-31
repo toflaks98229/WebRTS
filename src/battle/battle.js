@@ -9,6 +9,14 @@ import { RNG } from '../core/rng.js';
 
 export const PHASE = { deploy: 'deploy', playing: 'playing', over: 'over' };
 
+/**
+ * A riposte is a reaction, not a set-up blow: it swings a little wilder and
+ * lands a little lighter than the same attack made on your own time. It costs
+ * no AP - it is not your turn - but it costs breath, and that is what stops a
+ * single greatsword from cutting down a whole line unanswered.
+ */
+const RIPOSTE = { hit: -10, damage: 0.75, fatigue: 12 };
+
 export class Battle {
   constructor({ cols = 16, rows = 11, seed, biome = 'plains' } = {}) {
     this.rng = new RNG(seed);
@@ -186,6 +194,7 @@ export class Battle {
       unit.spend(sk);
       const res = resolveAttack(this, unit, target, sk);
       if (res.hit && sk.effect === 'push') this.pushUnit(unit, target);
+      if (sk.type === 'melee') this.checkRiposte(unit, target);
       this.checkBattleOver();
       return true;
     }
@@ -211,6 +220,32 @@ export class Battle {
     }
     this.bus.emit('unit:skill', { unit, skill: sk });
     return true;
+  }
+
+  /**
+   * A fighter holding a riposte answers every melee blow aimed at them, hit or
+   * miss, until their next turn. The counter itself never provokes another one:
+   * it is resolved directly rather than through `useSkill`.
+   */
+  checkRiposte(attacker, defender) {
+    if (!defender.alive || !attacker.alive) return;
+    if (!defender.stances.has('riposte')) return;
+    if (defender.isFleeing || defender.stunned > 0) return;
+    if (RIPOSTE.fatigue > defender.fatigueLeft) return;
+
+    const base = defender.counterSkill();
+    if (!base) return;
+    if (distance(defender.hex, attacker.hex) > defender.reach(base)) return;
+
+    const counter = {
+      ...base,
+      name: SKILLS.riposte.name,
+      hitBonus: (base.hitBonus || 0) + RIPOSTE.hit,
+      damageMult: (base.damageMult ?? 1) * RIPOSTE.damage,
+    };
+    defender.fatigue = Math.min(defender.fatigueMax, defender.fatigue + RIPOSTE.fatigue);
+    this.log(`${defender.name} 이(가) 받아친다!`, 'special', defender.faction);
+    resolveAttack(this, defender, attacker, counter, { free: true });
   }
 
   pushUnit(pusher, target) {

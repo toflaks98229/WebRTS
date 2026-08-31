@@ -8,7 +8,7 @@ export const WEAPONS = {
   // --- Swords ---
   shortSword:   { id: 'shortSword',   name: '숏소드',       kind: 'sword', damage: [22, 30], armorMult: 1.0,  armorPen: 0.20, range: 1, fatigue: 6,  skills: ['slash', 'thrust'], value: 250 },
   armingSword:  { id: 'armingSword',  name: '아밍소드',     kind: 'sword', damage: [30, 40], armorMult: 1.0,  armorPen: 0.20, range: 1, fatigue: 8,  skills: ['slash', 'thrust'], value: 900 },
-  greatsword:   { id: 'greatsword',   name: '그레이트소드', kind: 'sword', damage: [45, 65], armorMult: 1.1,  armorPen: 0.20, range: 2, fatigue: 18, twoHanded: true, skills: ['slash', 'thrust'], value: 3800 },
+  greatsword:   { id: 'greatsword',   name: '그레이트소드', kind: 'sword', damage: [45, 65], armorMult: 1.1,  armorPen: 0.20, range: 2, fatigue: 18, twoHanded: true, skills: ['slash', 'thrust', 'riposte'], value: 3800 },
 
   // --- Axes ---
   handAxe:      { id: 'handAxe',      name: '손도끼',       kind: 'axe',   damage: [25, 40], armorMult: 1.35, armorPen: 0.10, range: 1, fatigue: 7,  skills: ['chop', 'splitShield'], value: 300 },

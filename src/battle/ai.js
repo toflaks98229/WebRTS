@@ -252,6 +252,11 @@ export class AI {
       b.useSkill(unit, 'spearwall');
       return true;
     }
+    if (nearest <= 1 && unit.stances.size === 0 && unit.canAfford(SKILLS.riposte)
+        && unit.skills.some((s) => s.id === 'riposte')) {
+      b.useSkill(unit, 'riposte');
+      return true;
+    }
     if (nearest <= 1 && unit.shield?.durability > 0 && unit.stances.size === 0
         && unit.ap >= SKILLS.shieldwall.ap && unit.canAfford(SKILLS.shieldwall)) {
       b.useSkill(unit, 'shieldwall');

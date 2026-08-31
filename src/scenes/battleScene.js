@@ -11,6 +11,8 @@ import { salvage } from '../campaign/loot.js';
 import { overlay, esc } from '../ui/overlay.js';
 
 const AI_STEP_DELAY = 380;   // ms between AI actions, so the player can follow along
+/** Grace period before a turn with no moves left in it passes on its own. */
+const AUTO_END_DELAY = 420;
 
 /**
  * The tactical fight. Owns its own camera and renderer; the app drives it and
@@ -99,6 +101,7 @@ export class BattleScene {
     b.bus.on('turn:start', ({ unit }) => {
       this.ai.beginTurn();
       this.aiClock = performance.now() + 220;
+      this.idleSince = 0;
       this.activeSkill = this.defaultSkill(unit);
       this.inspected = null;
       this.camera.centerOn(this.layout.toPixel(unit.hex), 0.35);
@@ -281,6 +284,46 @@ export class BattleScene {
 
   showHelp() { this.hud.showHelp(); }
 
+  // --------------------------------------------------------- auto end turn
+  /**
+   * Whether this fighter still has anything it could do: a skill it can pay for
+   * *and* aim somewhere, or a tile it can step onto. Affordability alone is not
+   * enough - a swing with nothing in reach is not a move.
+   */
+  hasOptions(u) {
+    if (!u || !u.alive || u.withdrawn) return false;
+    for (const sk of u.skills) {
+      if (sk.type === 'utility' || !u.canAfford(sk)) continue;
+      if (sk.type === 'melee' || sk.type === 'ranged') {
+        if (this.battle.targetsFor(u, sk).length) return true;
+      } else {
+        return true;              // stances and recover need no target
+      }
+    }
+    return (this.reach?.size ?? 0) > 0;
+  }
+
+  /**
+   * Pass the turn on once nothing is left in it, rather than making the player
+   * confirm a choice that does not exist. A fighter at full AP can always fall
+   * back on catching their breath, so this only fires when they are genuinely
+   * spent - being boxed in on a fresh turn still leaves the decision to wait.
+   */
+  maybeAutoEndTurn(now) {
+    const b = this.battle;
+    const u = b.current;
+    const mine = b.phase === 'playing' && u && u.faction === 'player' && !u.isFleeing;
+    if (!mine || this.renderer.animating || this.hasOptions(u)) { this.idleSince = 0; return; }
+
+    if (!this.idleSince) { this.idleSince = now; return; }
+    if (now - this.idleSince < AUTO_END_DELAY) return;
+
+    this.idleSince = 0;
+    const p = this.renderer.pixelOf(u);
+    this.effects.floatText(p.x, p.y - 44, '행동 종료', '#9a9184', 13);
+    b.endTurn();
+  }
+
   // ------------------------------------------------------------ actions
   afterAction() {
     const u = this.battle.current;
@@ -343,6 +386,7 @@ export class BattleScene {
     this.renderer.update(dt);
     this.tickAI(now);
     this.refreshReach();
+    this.maybeAutoEndTurn(now);
   }
 
   draw() { this.renderer.draw(); }
