@@ -1,0 +1,770 @@
+{
+  "source": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "license": "CC-BY-SA 3.0 / GPL-3.0",
+  "items": {
+    "body": {
+      "name": "Body Color",
+      "def": "body",
+      "layers": [
+        {
+          "z": 10,
+          "frames": {
+            "idle": "body/bodies/male/idle.png",
+            "walk": "body/bodies/male/walk.png",
+            "slash": "body/bodies/male/slash.png",
+            "thrust": "body/bodies/male/thrust.png",
+            "shoot": "body/bodies/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "head": {
+      "name": "Human Male",
+      "def": "heads_human_male",
+      "layers": [
+        {
+          "z": 100,
+          "frames": {
+            "idle": "head/heads/human/male/idle.png",
+            "walk": "head/heads/human/male/walk.png",
+            "slash": "head/heads/human/male/slash.png",
+            "thrust": "head/heads/human/male/thrust.png",
+            "shoot": "head/heads/human/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "legs": {
+      "name": "Pants",
+      "def": "legs_pants",
+      "layers": [
+        {
+          "z": 20,
+          "frames": {
+            "idle": "legs/pants/male/idle.png",
+            "walk": "legs/pants/male/walk.png",
+            "slash": "legs/pants/male/slash.png",
+            "thrust": "legs/pants/male/thrust.png",
+            "shoot": "legs/pants/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "legsArmor": {
+      "name": "Armour",
+      "def": "legs_armour",
+      "layers": [
+        {
+          "z": 20,
+          "frames": {
+            "idle": "legs/armour/plate/male/idle.png",
+            "walk": "legs/armour/plate/male/walk.png",
+            "slash": "legs/armour/plate/male/slash.png",
+            "thrust": "legs/armour/plate/male/thrust.png",
+            "shoot": "legs/armour/plate/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "feet": {
+      "name": "Basic Boots",
+      "def": "feet_boots_basic",
+      "layers": [
+        {
+          "z": 25,
+          "frames": {
+            "idle": "feet/boots/basic/male/idle.png",
+            "walk": "feet/boots/basic/male/walk.png",
+            "slash": "feet/boots/basic/male/slash.png",
+            "thrust": "feet/boots/basic/male/thrust.png",
+            "shoot": "feet/boots/basic/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "rags": {
+      "name": "Tunic",
+      "def": "torso_clothes_tunic",
+      "layers": [
+        {
+          "z": 35,
+          "frames": {
+            "walk": "torso/clothes/tunic/female/walk/brown.png",
+            "slash": "torso/clothes/tunic/female/slash/brown.png",
+            "thrust": "torso/clothes/tunic/female/thrust/brown.png",
+            "shoot": "torso/clothes/tunic/female/shoot/brown.png"
+          }
+        }
+      ]
+    },
+    "gambeson": {
+      "name": "Longsleeve",
+      "def": "torso_clothes_longsleeve",
+      "layers": [
+        {
+          "z": 35,
+          "frames": {
+            "idle": "torso/clothes/longsleeve/longsleeve/male/idle.png",
+            "walk": "torso/clothes/longsleeve/longsleeve/male/walk.png",
+            "slash": "torso/clothes/longsleeve/longsleeve/male/slash.png",
+            "thrust": "torso/clothes/longsleeve/longsleeve/male/thrust.png",
+            "shoot": "torso/clothes/longsleeve/longsleeve/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "leatherArmor": {
+      "name": "Leather",
+      "def": "torso_armour_leather",
+      "layers": [
+        {
+          "z": 60,
+          "frames": {
+            "idle": "torso/armour/leather/male/idle.png",
+            "walk": "torso/armour/leather/male/walk.png",
+            "slash": "torso/armour/leather/male/slash.png",
+            "thrust": "torso/armour/leather/male/thrust.png",
+            "shoot": "torso/armour/leather/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "mailShirt": {
+      "name": "Chainmail",
+      "def": "torso_chainmail",
+      "layers": [
+        {
+          "z": 50,
+          "frames": {
+            "idle": "torso/chainmail/male/idle.png",
+            "walk": "torso/chainmail/male/walk.png",
+            "slash": "torso/chainmail/male/slash.png",
+            "thrust": "torso/chainmail/male/thrust.png",
+            "shoot": "torso/chainmail/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "scaleArmor": {
+      "name": "Legion",
+      "def": "torso_armour_legion",
+      "layers": [
+        {
+          "z": 60,
+          "frames": {
+            "idle": "torso/armour/legion/male/idle.png",
+            "walk": "torso/armour/legion/male/walk.png",
+            "slash": "torso/armour/legion/male/slash.png",
+            "thrust": "torso/armour/legion/male/thrust.png",
+            "shoot": "torso/armour/legion/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "plateArmor": {
+      "name": "Plate",
+      "def": "torso_armour_plate",
+      "layers": [
+        {
+          "z": 60,
+          "frames": {
+            "idle": "torso/armour/plate/male/idle.png",
+            "walk": "torso/armour/plate/male/walk.png",
+            "slash": "torso/armour/plate/male/slash.png",
+            "thrust": "torso/armour/plate/male/thrust.png",
+            "shoot": "torso/armour/plate/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "hood": {
+      "name": "Hood",
+      "def": "hat_hood_cloth",
+      "layers": [
+        {
+          "z": 130,
+          "frames": {
+            "idle": "hat/cloth/hood/adult/idle.png",
+            "walk": "hat/cloth/hood/adult/walk.png",
+            "slash": "hat/cloth/hood/adult/slash.png",
+            "thrust": "hat/cloth/hood/adult/thrust.png",
+            "shoot": "hat/cloth/hood/adult/shoot.png"
+          }
+        }
+      ]
+    },
+    "leatherCap": {
+      "name": "Leather Cap",
+      "def": "hat_cap_leather",
+      "layers": [
+        {
+          "z": 130,
+          "frames": {
+            "idle": "hat/cloth/leather_cap/adult/idle.png",
+            "walk": "hat/cloth/leather_cap/adult/walk.png",
+            "slash": "hat/cloth/leather_cap/adult/slash.png",
+            "thrust": "hat/cloth/leather_cap/adult/thrust.png",
+            "shoot": "hat/cloth/leather_cap/adult/shoot.png"
+          }
+        }
+      ]
+    },
+    "mailCoif": {
+      "name": "Mail",
+      "def": "hat_helmet_mail",
+      "layers": [
+        {
+          "z": 125,
+          "frames": {
+            "idle": "hat/helmet/mail/adult/idle.png",
+            "walk": "hat/helmet/mail/adult/walk.png",
+            "slash": "hat/helmet/mail/adult/slash.png",
+            "thrust": "hat/helmet/mail/adult/thrust.png",
+            "shoot": "hat/helmet/mail/adult/shoot.png"
+          }
+        }
+      ]
+    },
+    "kettleHat": {
+      "name": "Kettle helm",
+      "def": "hat_helmet_kettle",
+      "layers": [
+        {
+          "z": 135,
+          "frames": {
+            "idle": "hat/helmet/kettle/adult/idle.png",
+            "walk": "hat/helmet/kettle/adult/walk.png",
+            "slash": "hat/helmet/kettle/adult/slash.png",
+            "thrust": "hat/helmet/kettle/adult/thrust.png",
+            "shoot": "hat/helmet/kettle/adult/shoot.png"
+          }
+        }
+      ]
+    },
+    "nasalHelm": {
+      "name": "Nasal helm",
+      "def": "hat_helmet_nasal",
+      "layers": [
+        {
+          "z": 130,
+          "frames": {
+            "idle": "hat/helmet/nasal/adult/idle.png",
+            "walk": "hat/helmet/nasal/adult/walk.png",
+            "slash": "hat/helmet/nasal/adult/slash.png",
+            "thrust": "hat/helmet/nasal/adult/thrust.png",
+            "shoot": "hat/helmet/nasal/adult/shoot.png"
+          }
+        }
+      ]
+    },
+    "greatHelm": {
+      "name": "Greathelm",
+      "def": "hat_helmet_greathelm",
+      "layers": [
+        {
+          "z": 130,
+          "frames": {
+            "idle": "hat/helmet/greathelm/male/idle.png",
+            "walk": "hat/helmet/greathelm/male/walk.png",
+            "slash": "hat/helmet/greathelm/male/slash.png",
+            "thrust": "hat/helmet/greathelm/male/thrust.png",
+            "shoot": "hat/helmet/greathelm/male/shoot.png"
+          }
+        }
+      ]
+    },
+    "shortSword": {
+      "name": "Arming Sword",
+      "def": "weapon_sword_arming",
+      "layers": [
+        {
+          "z": 8,
+          "frames": {
+            "slash": "weapon/sword/arming/attack_slash/bg/steel.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "idle": "weapon/sword/arming/universal/bg/idle/steel.png",
+            "walk": "weapon/sword/arming/universal/bg/walk/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "idle": "weapon/sword/arming/universal/fg/idle/steel.png",
+            "walk": "weapon/sword/arming/universal/fg/walk/steel.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/sword/arming/attack_slash/fg/steel.png"
+          }
+        }
+      ]
+    },
+    "armingSword": {
+      "name": "Arming Sword",
+      "def": "weapon_sword_arming",
+      "layers": [
+        {
+          "z": 8,
+          "frames": {
+            "slash": "weapon/sword/arming/attack_slash/bg/steel.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "idle": "weapon/sword/arming/universal/bg/idle/steel.png",
+            "walk": "weapon/sword/arming/universal/bg/walk/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "idle": "weapon/sword/arming/universal/fg/idle/steel.png",
+            "walk": "weapon/sword/arming/universal/fg/walk/steel.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/sword/arming/attack_slash/fg/steel.png"
+          }
+        }
+      ]
+    },
+    "greatsword": {
+      "name": "Longsword",
+      "def": "weapon_sword_longsword",
+      "layers": [
+        {
+          "z": -1,
+          "frames": {
+            "slash": "weapon/sword/longsword/attack_slash/behind/longsword.png"
+          }
+        },
+        {
+          "z": -1,
+          "frames": {
+            "thrust": "weapon/sword/longsword/attack_thrust/behind/longsword.png",
+            "slash": "weapon/sword/longsword/attack_thrust/behind/longsword.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/sword/longsword/universal_behind/walk/longsword.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/sword/longsword/walk/longsword.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/sword/longsword/attack_slash/longsword.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "thrust": "weapon/sword/longsword/attack_thrust/longsword.png",
+            "slash": "weapon/sword/longsword/attack_thrust/longsword.png"
+          }
+        }
+      ]
+    },
+    "handAxe": {
+      "name": "Axe",
+      "def": "tool_axe",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "idle": "tools/axe/bg.png",
+            "walk": "tools/axe/bg.png",
+            "slash": "tools/axe/bg.png",
+            "thrust": "tools/axe/bg.png",
+            "shoot": "tools/axe/bg.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "tools/axe/male/walk.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "idle": "tools/axe/fg.png",
+            "walk": "tools/axe/fg.png",
+            "slash": "tools/axe/fg.png",
+            "thrust": "tools/axe/fg.png",
+            "shoot": "tools/axe/fg.png"
+          }
+        }
+      ]
+    },
+    "battleAxe": {
+      "name": "Waraxe",
+      "def": "weapon_blunt_waraxe",
+      "layers": [
+        {
+          "z": 8,
+          "frames": {
+            "slash": "weapon/blunt/waraxe/attack_slash/behind/waraxe.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/blunt/waraxe/behind/walk/waraxe.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/blunt/waraxe/walk/waraxe.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/blunt/waraxe/attack_slash/waraxe.png"
+          }
+        }
+      ]
+    },
+    "woodenClub": {
+      "name": "Club",
+      "def": "weapon_blunt_club",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "idle": "weapon/blunt/club/background/club.png",
+            "walk": "weapon/blunt/club/background/club.png",
+            "slash": "weapon/blunt/club/background/club.png",
+            "thrust": "weapon/blunt/club/background/club.png",
+            "shoot": "weapon/blunt/club/background/club.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "idle": "weapon/blunt/club/club.png",
+            "walk": "weapon/blunt/club/club.png",
+            "slash": "weapon/blunt/club/club.png",
+            "thrust": "weapon/blunt/club/club.png",
+            "shoot": "weapon/blunt/club/club.png"
+          }
+        }
+      ]
+    },
+    "mace": {
+      "name": "Mace",
+      "def": "weapon_blunt_mace",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/blunt/mace/universal_behind/walk/mace.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "slash": "weapon/blunt/mace/attack_slash/behind/mace.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/blunt/mace/walk/mace.png",
+            "thrust": "weapon/blunt/mace/thrust/mace.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/blunt/mace/attack_slash/mace.png"
+          }
+        }
+      ]
+    },
+    "warhammer": {
+      "name": "Mace",
+      "def": "weapon_blunt_mace",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/blunt/mace/universal_behind/walk/mace.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "slash": "weapon/blunt/mace/attack_slash/behind/mace.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/blunt/mace/walk/mace.png",
+            "thrust": "weapon/blunt/mace/thrust/mace.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "slash": "weapon/blunt/mace/attack_slash/mace.png"
+          }
+        }
+      ]
+    },
+    "spear": {
+      "name": "Spear",
+      "def": "weapon_polearm_spear",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/polearm/spear/background/walk/steel.png",
+            "thrust": "weapon/polearm/spear/background/thrust/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/polearm/spear/foreground/walk/steel.png",
+            "thrust": "weapon/polearm/spear/foreground/thrust/steel.png"
+          }
+        }
+      ]
+    },
+    "pike": {
+      "name": "Long spear",
+      "def": "weapon_polearm_longspear",
+      "layers": [
+        {
+          "z": -1,
+          "frames": {
+            "thrust": "weapon/polearm/longspear/background/thrust/steel.png",
+            "slash": "weapon/polearm/longspear/background/thrust/steel.png"
+          }
+        },
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/polearm/longspear/background/walk/steel.png",
+            "slash": "weapon/polearm/longspear/background/walk/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/polearm/longspear/foreground/walk/steel.png",
+            "slash": "weapon/polearm/longspear/foreground/walk/steel.png"
+          }
+        },
+        {
+          "z": 150,
+          "frames": {
+            "thrust": "weapon/polearm/longspear/foreground/thrust/steel.png",
+            "slash": "weapon/polearm/longspear/foreground/thrust/steel.png"
+          }
+        }
+      ]
+    },
+    "dagger": {
+      "name": "Dagger",
+      "def": "weapon_sword_dagger",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/sword/dagger/behind/walk/dagger.png",
+            "slash": "weapon/sword/dagger/behind/slash/dagger.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/sword/dagger/walk/dagger.png",
+            "slash": "weapon/sword/dagger/slash/dagger.png",
+            "thrust": "weapon/sword/dagger/thrust/dagger.png"
+          }
+        }
+      ]
+    },
+    "shortBow": {
+      "name": "Normal",
+      "def": "weapon_ranged_bow_normal",
+      "layers": [
+        {
+          "z": -1,
+          "frames": {
+            "shoot": "weapon/ranged/bow/normal/universal/background/shoot.png"
+          }
+        },
+        {
+          "z": -1,
+          "frames": {
+            "idle": "weapon/ranged/bow/normal/walk/background/steel.png",
+            "walk": "weapon/ranged/bow/normal/walk/background/steel.png",
+            "slash": "weapon/ranged/bow/normal/walk/background/steel.png",
+            "thrust": "weapon/ranged/bow/normal/walk/background/steel.png",
+            "shoot": "weapon/ranged/bow/normal/walk/background/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "shoot": "weapon/ranged/bow/normal/universal/foreground/shoot.png"
+          }
+        },
+        {
+          "z": 141,
+          "frames": {
+            "idle": "weapon/ranged/bow/normal/walk/foreground/steel.png",
+            "walk": "weapon/ranged/bow/normal/walk/foreground/steel.png",
+            "slash": "weapon/ranged/bow/normal/walk/foreground/steel.png",
+            "thrust": "weapon/ranged/bow/normal/walk/foreground/steel.png",
+            "shoot": "weapon/ranged/bow/normal/walk/foreground/steel.png"
+          }
+        }
+      ]
+    },
+    "warBow": {
+      "name": "Great",
+      "def": "weapon_ranged_bow_great",
+      "layers": [
+        {
+          "z": -1,
+          "frames": {
+            "idle": "weapon/ranged/bow/great/walk/background/steel.png",
+            "walk": "weapon/ranged/bow/great/walk/background/steel.png",
+            "slash": "weapon/ranged/bow/great/walk/background/steel.png",
+            "thrust": "weapon/ranged/bow/great/walk/background/steel.png",
+            "shoot": "weapon/ranged/bow/great/walk/background/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "shoot": "weapon/ranged/bow/great/universal/foreground/shoot/steel.png"
+          }
+        },
+        {
+          "z": 141,
+          "frames": {
+            "idle": "weapon/ranged/bow/great/walk/foreground/steel.png",
+            "walk": "weapon/ranged/bow/great/walk/foreground/steel.png",
+            "slash": "weapon/ranged/bow/great/walk/foreground/steel.png",
+            "thrust": "weapon/ranged/bow/great/walk/foreground/steel.png",
+            "shoot": "weapon/ranged/bow/great/walk/foreground/steel.png"
+          }
+        }
+      ]
+    },
+    "crossbow": {
+      "name": "Crossbow",
+      "def": "weapon_ranged_crossbow",
+      "layers": [
+        {
+          "z": -1,
+          "frames": {
+            "walk": "weapon/ranged/crossbow/background/walk/crossbow.png",
+            "thrust": "weapon/ranged/crossbow/background/thrust/crossbow.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/ranged/crossbow/foreground/walk/crossbow.png",
+            "thrust": "weapon/ranged/crossbow/foreground/thrust/crossbow.png"
+          }
+        }
+      ]
+    },
+    "javelin": {
+      "name": "Spear",
+      "def": "weapon_polearm_spear",
+      "layers": [
+        {
+          "z": 9,
+          "frames": {
+            "walk": "weapon/polearm/spear/background/walk/steel.png",
+            "thrust": "weapon/polearm/spear/background/thrust/steel.png"
+          }
+        },
+        {
+          "z": 140,
+          "frames": {
+            "walk": "weapon/polearm/spear/foreground/walk/steel.png",
+            "thrust": "weapon/polearm/spear/foreground/thrust/steel.png"
+          }
+        }
+      ]
+    },
+    "woodenShield": {
+      "name": "Round Shield",
+      "def": "shield_round",
+      "layers": [
+        {
+          "z": 110,
+          "frames": {
+            "walk": "shield/round/walk.png",
+            "slash": "shield/round/slash.png",
+            "thrust": "shield/round/thrust.png"
+          }
+        }
+      ]
+    },
+    "heaterShield": {
+      "name": "Heater Shield Base",
+      "def": "shield_heater_wood",
+      "layers": [
+        {
+          "z": 2,
+          "frames": {
+            "idle": "shield/heater/original/wood/bg/idle.png"
+          }
+        },
+        {
+          "z": 110,
+          "frames": {
+            "idle": "shield/heater/original/wood/fg/idle.png",
+            "walk": "shield/heater/original/wood/fg/walk.png",
+            "slash": "shield/heater/original/wood/fg/slash.png",
+            "thrust": "shield/heater/original/wood/fg/thrust.png",
+            "shoot": "shield/heater/original/wood/fg/shoot.png"
+          }
+        }
+      ]
+    },
+    "kiteShield": {
+      "name": "Kite",
+      "def": "shield_kite",
+      "layers": [
+        {
+          "z": 110,
+          "frames": {
+            "walk": "shield/kite/male/walk/kite_blue_blue.png",
+            "slash": "shield/kite/male/slash/kite_blue_blue.png",
+            "thrust": "shield/kite/male/thrust/kite_blue_blue.png"
+          }
+        }
+      ]
+    }
+  }
+}
