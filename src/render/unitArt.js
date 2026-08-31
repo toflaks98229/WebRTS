@@ -4,16 +4,17 @@
  * A fighter is drawn as one hand-drawn DCSS monster tile rather than composed
  * from equipment layers.
  *
- * The paper doll that used to live here showed what a man was carrying, which
- * sounds strictly better - until you look at it. DCSS's `player/` parts are cut
- * for DCSS's own compositor, which splits a shield into a piece behind the body
- * and a piece in front of the arm and knows, per item, which goes where. Drawn
- * as one flat layer the shield always ended up behind the hand, and no z-order
- * fixes that: the art for the front half is a different file.
+ * The paper doll that used to live here stacked six equipment layers and got the
+ * shield wrong every time: DCSS cuts a shield into a piece behind the body and a
+ * piece in front of the arm, and we only ever drew the behind piece, so the
+ * shield sat behind the hand no matter what z-order we gave it.
  *
- * A whole figure drawn by one artist has no seams to get wrong. The cost is
- * that looted gear no longer shows on the man - equipment reads from the unit
- * card and the log instead. The sprite says what he *is*, not what he picked up.
+ * So the body is one whole figure now, and only the two things worth reading at
+ * a glance are laid over it - **the weapon behind, the shield in front**. That
+ * order is the one the art can actually support: a shield drawn wholly in front
+ * of the torso can never be swallowed by a hand, and a weapon behind reads as
+ * held in the far hand with its silhouette clear of the body. Armour is not
+ * layered at all; it reads from the unit card.
  *
  * Each unit picks one sprite from its background's list by id, so a company of
  * militia is not six copies of the same man, and a given brother keeps the same
@@ -24,11 +25,23 @@ export const UNIT_TILE = 32;
 /** Drawn for anything with no list of its own. */
 const FALLBACK = 'unit.militia';
 
+/**
+ * Source pixels the weapon is pushed out to the trailing side.
+ *
+ * Held items are cut to sit against the narrow shoulders of DCSS's paper doll.
+ * A monster tile can be a good deal broader than that, and a weapon drawn
+ * behind a broad figure - a bare-chested brawler with a hand axe - disappears
+ * behind him entirely. A nudge outward keeps the blade in the silhouette
+ * without moving it off the hand.
+ */
+const WEAPON_NUDGE = 3;
+
 export class UnitArt {
   constructor(base, manifest, images) {
     this.base = base;
     this.sets = manifest.units || {};
-    this.images = images;      // 'unit.militia.0' -> HTMLImageElement
+    this.held = manifest.gear || {};
+    this.images = images;      // 'unit.militia.0' / 'gear.weapon.mace' -> Image
   }
 
   static async load(base = 'assets/dcss') {
@@ -42,17 +55,15 @@ export class UnitArt {
 
     const images = new Map();
     const jobs = [];
-    for (const [id, list] of Object.entries(manifest.units)) {
-      list.forEach((_, i) => {
-        const key = `${id}.${i}`;
-        jobs.push(new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => { images.set(key, img); resolve(); };
-          img.onerror = () => resolve();
-          img.src = `${base}/${encodeURIComponent(key)}.png`;
-        }));
-      });
-    }
+    const load = (key) => jobs.push(new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { images.set(key, img); resolve(); };
+      img.onerror = () => resolve();
+      img.src = `${base}/${encodeURIComponent(key)}.png`;
+    }));
+    for (const [id, list] of Object.entries(manifest.units)) list.forEach((_, i) => load(`${id}.${i}`));
+    for (const id of Object.keys(manifest.gear || {})) load(id);
+
     await Promise.all(jobs);
     if (!images.size) return null;
     return new UnitArt(base, manifest, images);
@@ -70,24 +81,42 @@ export class UnitArt {
     return this.images.get(`${key}.${unit.id % set.length}`) || null;
   }
 
+  /** The held item art for one slot, or null when there is nothing to show. */
+  gearFor(unit) {
+    if (unit.isBeast) return { weapon: null, shield: null };   // claws are the sprite
+    const pick = (id) => (id && this.images.get(id)) || null;
+    return {
+      weapon: pick(unit.weapon?.id && `gear.weapon.${unit.weapon.id}`),
+      // A splintered shield is gone from the arm as well as from the maths.
+      shield: pick(unit.shield?.id && unit.shield.durability > 0
+        && `gear.shield.${unit.shield.id}`),
+    };
+  }
+
   /**
    * Draw a fighter. `x, y` is where the feet stand; `scale` is world pixels per
    * source pixel, shared with the ground so the pixel grids line up.
    *
-   * Monster tiles are not all 32 square - a tall figure is a taller image - so
-   * the sprite is measured rather than assumed, and stood on its bottom edge.
+   * Weapon, body, shield - in that order, so the shield always reads and the
+   * weapon always has a clear silhouette. Every layer stands on the same ground
+   * line: monster tiles are not all 32 square, so each image is measured rather
+   * than assumed, while the 32px held items keep their own footing.
    */
   draw(ctx, unit, { x, y, scale = 2, flip = false } = {}) {
-    const img = this.spriteFor(unit);
-    if (!img) return false;
-    const w = img.width * scale;
-    const h = img.height * scale;
+    const body = this.spriteFor(unit);
+    if (!body) return false;
+    const { weapon, shield } = this.gearFor(unit);
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(x, y);
     if (flip) ctx.scale(-1, 1);
-    ctx.drawImage(img, -w / 2, -h, w, h);
+    for (const [img, dx] of [[weapon, -WEAPON_NUDGE], [body, 0], [shield, 0]]) {
+      if (!img) continue;
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, -w / 2 + dx * scale, -h, w, h);
+    }
     ctx.restore();
     return true;
   }

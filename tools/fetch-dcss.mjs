@@ -184,13 +184,45 @@ const UNITS = {
   // ---- the bandits ----
   'unit.banditThug':    ['mon/humanoids/humans/slave_freed.png', 'mon/unique/rupert.png',
                          'mon/humanoids/humans/human3.png'],
-  'unit.banditRaider':  ['mon/unique/edmund.png', 'mon/humanoids/humans/human3.png'],
+  'unit.banditRaider':  ['mon/unique/edmund_weaponless.png', 'mon/humanoids/humans/human3.png'],
   'unit.banditArcher':  ['mon/unique/joseph.png', 'mon/humanoids/humans/human2.png'],
   'unit.banditVeteran': ['mon/humanoids/humans/imperial_myrmidon.png', 'mon/humanoids/humans/vault_guard.png'],
-  'unit.banditLeader':  ['mon/humanoids/humans/vault_warden.png', 'mon/unique/edmund.png'],
+  'unit.banditLeader':  ['mon/humanoids/humans/vault_warden.png', 'mon/unique/edmund_weaponless.png'],
 
   // ---- beasts ----
   'unit.wolf': ['mon/animals/wolf.png'],
+};
+
+/**
+ * Held equipment, laid over the figure so a fighter's kit is readable at a
+ * glance: the weapon goes *behind* the body and the shield *in front* of it.
+ *
+ * That order is what the art supports. DCSS cuts a shield into a piece behind
+ * the body and a piece in front of the arm; we only have the one file, so
+ * putting the whole shield in front is the arrangement that never shows a
+ * shield swallowed by a hand. The weapon behind reads as held in the far hand
+ * and keeps its silhouette clear of the torso.
+ */
+const GEAR = {
+  'gear.weapon.shortSword':  'player/hand1/short_sword.png',
+  'gear.weapon.armingSword': 'player/hand1/long_sword_slant.png',
+  'gear.weapon.greatsword':  'player/hand1/sword_two.png',
+  'gear.weapon.handAxe':     'player/hand1/axe_short.png',
+  'gear.weapon.battleAxe':   'player/hand1/battleaxe.png',
+  'gear.weapon.woodenClub':  'player/hand1/club.png',
+  'gear.weapon.mace':        'player/hand1/mace.png',
+  'gear.weapon.warhammer':   'player/hand1/hammer_two.png',
+  'gear.weapon.spear':       'player/hand1/spear.png',
+  'gear.weapon.pike':        'player/hand1/spear2.png',
+  'gear.weapon.dagger':      'player/hand1/dagger.png',
+  'gear.weapon.shortBow':    'player/hand1/bow.png',
+  'gear.weapon.warBow':      'player/hand1/bow.png',
+  'gear.weapon.crossbow':    'player/hand1/arbalest.png',
+  'gear.weapon.javelin':     'player/hand1/trident.png',
+
+  'gear.shield.woodenShield': 'player/hand2/buckler_round.png',
+  'gear.shield.heaterShield': 'player/hand2/kite_shield_kite1.png',
+  'gear.shield.kiteShield':   'player/hand2/tower_shield_quartered.png',
 };
 
 async function get(url, tries = 4) {
@@ -241,8 +273,12 @@ async function main() {
   };
 
   manifest.units = {};
+  manifest.gear = {};
   for (const [id, rel] of Object.entries(ICONS)) {
     if (await grab(id, rel)) manifest.icons[id] = rel;
+  }
+  for (const [id, rel] of Object.entries(GEAR)) {
+    if (await grab(id, rel)) manifest.gear[id] = rel;
   }
 
   for (const [group, target] of [[TERRAIN, manifest.terrain], [UNITS, manifest.units]]) {
@@ -267,7 +303,8 @@ async function main() {
   const count = (m) => Object.values(m).reduce((s, l) => s + l.length, 0);
   console.log(`${Object.keys(manifest.icons).length} icons`
     + ` + ${count(manifest.terrain)} terrain tiles (${Object.keys(manifest.terrain).length} sets)`
-    + ` + ${count(manifest.units)} unit sprites (${Object.keys(manifest.units).length} backgrounds),`
+    + ` + ${count(manifest.units)} unit sprites (${Object.keys(manifest.units).length} backgrounds)`
+    + ` + ${Object.keys(manifest.gear).length} held items,`
     + ` ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
 }
 

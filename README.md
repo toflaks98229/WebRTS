@@ -183,7 +183,7 @@ src/
   campaign/           world(맵 생성) · campaign(시간·부대·조우·계약·급여)
                       company(명부·금고·창고) · contracts · bands · loot
   render/             camera · renderer(전장) · worldRenderer(지도)
-                      terrainAtlas(지형 패턴·경계 블렌딩) · unitArt(유닛 스프라이트) · effects
+                      terrainAtlas(지형 패턴·경계 블렌딩) · unitArt(유닛·무기·방패) · effects
   ui/                 overlay(공용) · hud(전투) · worldHud(지도)
                       settlementPanel(마을) · characterPanel(특성·단장 트리)
                       perkView(특성 노드 공용 렌더) · icons(DCSS 타일 로더)

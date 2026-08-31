@@ -225,7 +225,7 @@
       "mon/humanoids/humans/human3.png"
     ],
     "unit.banditRaider": [
-      "mon/unique/edmund.png",
+      "mon/unique/edmund_weaponless.png",
       "mon/humanoids/humans/human3.png"
     ],
     "unit.banditArcher": [
@@ -238,10 +238,30 @@
     ],
     "unit.banditLeader": [
       "mon/humanoids/humans/vault_warden.png",
-      "mon/unique/edmund.png"
+      "mon/unique/edmund_weaponless.png"
     ],
     "unit.wolf": [
       "mon/animals/wolf.png"
     ]
+  },
+  "gear": {
+    "gear.weapon.shortSword": "player/hand1/short_sword.png",
+    "gear.weapon.armingSword": "player/hand1/long_sword_slant.png",
+    "gear.weapon.greatsword": "player/hand1/sword_two.png",
+    "gear.weapon.handAxe": "player/hand1/axe_short.png",
+    "gear.weapon.battleAxe": "player/hand1/battleaxe.png",
+    "gear.weapon.woodenClub": "player/hand1/club.png",
+    "gear.weapon.mace": "player/hand1/mace.png",
+    "gear.weapon.warhammer": "player/hand1/hammer_two.png",
+    "gear.weapon.spear": "player/hand1/spear.png",
+    "gear.weapon.pike": "player/hand1/spear2.png",
+    "gear.weapon.dagger": "player/hand1/dagger.png",
+    "gear.weapon.shortBow": "player/hand1/bow.png",
+    "gear.weapon.warBow": "player/hand1/bow.png",
+    "gear.weapon.crossbow": "player/hand1/arbalest.png",
+    "gear.weapon.javelin": "player/hand1/trident.png",
+    "gear.shield.woodenShield": "player/hand2/buckler_round.png",
+    "gear.shield.heaterShield": "player/hand2/kite_shield_kite1.png",
+    "gear.shield.kiteShield": "player/hand2/tower_shield_quartered.png"
   }
 }

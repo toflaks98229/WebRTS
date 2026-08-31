@@ -85,6 +85,7 @@ export class Renderer {
         x: p.x, y: p.y, queue: [], t: 0, from: null, to: null,
         bob: Math.random() * 6, flash: 0,
         face: unit.faction === 'player' ? 1 : -1,
+        march: unit.faction === 'player' ? 1 : -1,
         attackUntil: 0, lean: 0, leanX: 0, leanY: 0, walking: false,
       };
       this.visuals.set(unit.id, v);
@@ -95,6 +96,11 @@ export class Renderer {
   queueWalk(unit, path) {
     const v = this.visual(unit);
     for (const h of path) v.queue.push(this.pixelOfHex(h));
+    // Two of the six hex directions are straight up and straight down, and a
+    // step along one of those says nothing about which way a fighter is facing.
+    // The march as a whole does, so it is remembered and used for those steps.
+    const end = v.queue[v.queue.length - 1];
+    if (end && Math.abs(end.x - v.x) > 0.5) v.march = end.x > v.x ? 1 : -1;
   }
 
   /**
@@ -110,8 +116,16 @@ export class Renderer {
     const len = Math.hypot(dx, dy) || 1;
     v.leanX = dx / len;
     v.leanY = dy / len;
-    v.face = dx >= 0 ? 1 : -1;
-    this.visual(target).face = dx >= 0 ? -1 : 1;
+    // Straight up or down: swinging at someone directly above tells us nothing
+    // about left and right, so the fighter keeps the way they were already
+    // turned rather than snapping to an arbitrary side.
+    if (Math.abs(dx) > 0.5) {
+      v.face = dx > 0 ? 1 : -1;
+      v.march = v.face;
+      const tv = this.visual(target);
+      tv.face = dx > 0 ? -1 : 1;      // the defender turns on their assailant
+      tv.march = tv.face;
+    }
   }
 
   /** True while any unit is still sliding between hexes. */
@@ -127,7 +141,8 @@ export class Renderer {
         v.from = { x: v.x, y: v.y };
         v.to = v.queue.shift();
         v.t = 0;
-        if (v.to.x !== v.from.x) v.face = v.to.x > v.from.x ? 1 : -1;
+        const dx = v.to.x - v.from.x;
+        v.face = Math.abs(dx) > 0.5 ? (dx > 0 ? 1 : -1) : (v.march ?? v.face);
       }
       if (v.to) {
         v.t += dt / MOVE_STEP_TIME;
