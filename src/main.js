@@ -1,7 +1,7 @@
 import { Unit } from './battle/unit.js';
 import { TEMPLATES } from './data/units.js';
 import { RNG } from './core/rng.js';
-import { DollBank } from './render/dollBank.js';
+import { UnitArt } from './render/unitArt.js';
 import { icons } from './ui/icons.js';
 import { TerrainAtlas } from './render/terrainAtlas.js';
 import { HUD } from './ui/hud.js';
@@ -29,7 +29,7 @@ class App {
     this.keys = new Set();
     this.mouse = null;
     this.dragging = null;
-    this.dollBank = null;
+    this.unitArt = null;
     this.maxCompanySize = MAX_COMPANY_SIZE;
 
     overlay.init();
@@ -70,10 +70,10 @@ class App {
         this.scene.renderer.atlas = atlas;
       }
     });
-    const bank = await DollBank.load('assets/dcss');
-    if (!bank) return;
-    this.dollBank = bank;
-    if (this.scene?.renderer && 'dolls' in this.scene.renderer) this.scene.renderer.dolls = bank;
+    const art = await UnitArt.load('assets/dcss');
+    if (!art) return;
+    this.unitArt = art;
+    if (this.scene?.renderer && 'art' in this.scene.renderer) this.scene.renderer.art = art;
   }
 
   setMode(mode) { document.getElementById('app').className = `mode-${mode}`; }

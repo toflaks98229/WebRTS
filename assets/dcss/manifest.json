@@ -189,42 +189,59 @@
       "dngn/trees/tree9.png"
     ]
   },
-  "doll": {
-    "doll.base.0": "player/base/human_m.png",
-    "doll.base.1": "player/base/human2_m.png",
-    "doll.base.2": "player/base/human3_m.png",
-    "doll.legs": "player/legs/pants_brown.png",
-    "doll.legsArmor": "player/legs/leg_armour00.png",
-    "doll.body.rags": "player/body/animal_skin.png",
-    "doll.body.gambeson": "player/body/robe_brown.png",
-    "doll.body.leatherArmor": "player/body/leather_armour.png",
-    "doll.body.mailShirt": "player/body/chainmail.png",
-    "doll.body.scaleArmor": "player/body/scalemail.png",
-    "doll.body.plateArmor": "player/body/plate.png",
-    "doll.head.hood": "player/head/hat_black.png",
-    "doll.head.leatherCap": "player/head/cap_black1.png",
-    "doll.head.mailCoif": "player/head/chain.png",
-    "doll.head.kettleHat": "player/head/helm_plume.png",
-    "doll.head.nasalHelm": "player/head/fhelm_gray3.png",
-    "doll.head.greatHelm": "player/head/full_black.png",
-    "doll.weapon.shortSword": "player/hand1/short_sword.png",
-    "doll.weapon.armingSword": "player/hand1/long_sword_slant.png",
-    "doll.weapon.greatsword": "player/hand1/sword_two.png",
-    "doll.weapon.handAxe": "player/hand1/axe_short.png",
-    "doll.weapon.battleAxe": "player/hand1/battleaxe.png",
-    "doll.weapon.woodenClub": "player/hand1/club.png",
-    "doll.weapon.mace": "player/hand1/mace.png",
-    "doll.weapon.warhammer": "player/hand1/hammer_two.png",
-    "doll.weapon.spear": "player/hand1/spear.png",
-    "doll.weapon.pike": "player/hand1/spear2.png",
-    "doll.weapon.dagger": "player/hand1/dagger.png",
-    "doll.weapon.shortBow": "player/hand1/bow.png",
-    "doll.weapon.warBow": "player/hand1/bow.png",
-    "doll.weapon.crossbow": "player/hand1/arbalest.png",
-    "doll.weapon.javelin": "player/hand1/trident.png",
-    "doll.shield.woodenShield": "player/hand2/buckler_round.png",
-    "doll.shield.heaterShield": "player/hand2/kite_shield_kite1.png",
-    "doll.shield.kiteShield": "player/hand2/tower_shield_quartered.png",
-    "doll.beast.wolf": "mon/animals/wolf.png"
+  "units": {
+    "unit.sellsword": [
+      "mon/humanoids/humans/imperial_myrmidon.png",
+      "mon/humanoids/humans/vault_guard.png"
+    ],
+    "unit.hedgeKnight": [
+      "mon/humanoids/humans/vault_warden.png",
+      "mon/unique/terence.png"
+    ],
+    "unit.brawler": [
+      "mon/unique/rupert.png",
+      "mon/unique/donald.png"
+    ],
+    "unit.militia": [
+      "mon/humanoids/humans/human.png",
+      "mon/humanoids/humans/human2.png",
+      "mon/humanoids/humans/human3.png"
+    ],
+    "unit.poacher": [
+      "mon/unique/joseph.png",
+      "mon/humanoids/humans/human.png"
+    ],
+    "unit.daytaler": [
+      "mon/humanoids/humans/slave_freed.png",
+      "mon/unique/donald.png"
+    ],
+    "unit.farmhand": [
+      "mon/humanoids/humans/human2.png",
+      "mon/humanoids/humans/human3.png"
+    ],
+    "unit.banditThug": [
+      "mon/humanoids/humans/slave_freed.png",
+      "mon/unique/rupert.png",
+      "mon/humanoids/humans/human3.png"
+    ],
+    "unit.banditRaider": [
+      "mon/unique/edmund.png",
+      "mon/humanoids/humans/human3.png"
+    ],
+    "unit.banditArcher": [
+      "mon/unique/joseph.png",
+      "mon/humanoids/humans/human2.png"
+    ],
+    "unit.banditVeteran": [
+      "mon/humanoids/humans/imperial_myrmidon.png",
+      "mon/humanoids/humans/vault_guard.png"
+    ],
+    "unit.banditLeader": [
+      "mon/humanoids/humans/vault_warden.png",
+      "mon/unique/edmund.png"
+    ],
+    "unit.wolf": [
+      "mon/animals/wolf.png"
+    ]
   }
 }

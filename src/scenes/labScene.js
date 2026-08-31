@@ -42,7 +42,7 @@ export class LabScene {
     const kept = keepUnits ? this.placed.map((p) => ({ tpl: p.unit.template.id, faction: p.unit.faction, hex: p.hex, level: p.unit.level, perks: [...p.unit.perks] })) : [];
     this.battle = new Battle({ cols: 15, rows: 9, seed: this.app.rng.int(0, 1e9), biome: this.biome });
     this.renderer = new Renderer(this.canvas, this.battle, this.layout, this.camera, this.effects);
-    this.renderer.dolls = this.app.dollBank || null;
+    this.renderer.art = this.app.unitArt || null;
     this.renderer.atlas = this.app.terrainAtlas || null;
     this.placed = [];
     for (const k of kept) this.place(k.hex, k);

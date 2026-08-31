@@ -1,7 +1,7 @@
 import { terrain } from '../data/terrain.js';
 import { DIRS, add } from '../hex/hex.js';
 import { MORALE } from '../battle/unit.js';
-import { DollBank } from './dollBank.js';
+import { UnitArt } from './unitArt.js';
 
 const FACTION = {
   player: { main: '#4d7ea8', dark: '#2c4a63', light: '#8fb8d8', banner: '#c8a24a' },
@@ -32,8 +32,8 @@ export class Renderer {
     this.effects = effects;
     this.visuals = new Map();
     this.time = 0;
-    /** DCSS paper dolls, set once loaded; null = procedural figures. */
-    this.dolls = null;
+    /** DCSS unit sprites, set once loaded; null = procedural figures. */
+    this.art = null;
     /** DCSS ground textures; null = flat colours. */
     this.atlas = null;
 
@@ -464,8 +464,8 @@ export class Renderer {
     const col = FACTION[u.faction];
     const x = v.x;
     const y = v.y;
-    // A doll is one static frame, so its life comes from here: a march step
-    // while moving, a slow breath when still.
+    // A monster tile is one static frame, so its life comes from here: a march
+    // step while moving, a slow breath when still.
     const bob = v.walking
       ? -Math.abs(Math.sin(this.time * 13)) * s * 0.07
       : Math.sin(this.time * 2 + v.bob) * (isCurrent ? 1.5 : 0.6);
@@ -500,9 +500,9 @@ export class Renderer {
     const armorCol = u.isBeast ? '#6a5a44' : shade('#5a5148', '#9aa3ab', bodyTone);
 
     let drewSprite = false;
-    if (this.dolls) {
+    if (this.art) {
       const reach = v.lean * s * 0.34;
-      drewSprite = this.dolls.draw(ctx, u, {
+      drewSprite = this.art.draw(ctx, u, {
         x: v.leanX * reach,
         y: s * 0.3 + v.leanY * reach * 0.5,
         scale: PIXEL,
