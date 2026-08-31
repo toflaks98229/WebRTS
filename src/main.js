@@ -3,6 +3,7 @@ import { TEMPLATES } from './data/units.js';
 import { RNG } from './core/rng.js';
 import { SpriteBank } from './render/sprites.js';
 import { icons } from './ui/icons.js';
+import { TerrainAtlas } from './render/terrainAtlas.js';
 import { HUD } from './ui/hud.js';
 import { WorldHud } from './ui/worldHud.js';
 import { overlay } from './ui/overlay.js';
@@ -63,6 +64,12 @@ class App {
   async loadSprites() {
     // Icons arrive after the first paint; nudge the live HUD so they appear.
     icons.load('assets/dcss').then((ok) => { if (ok) this.scene?.hud?.refresh?.(); });
+    TerrainAtlas.load('assets/dcss').then((atlas) => {
+      this.terrainAtlas = atlas;
+      if (atlas && this.scene?.renderer && 'atlas' in this.scene.renderer) {
+        this.scene.renderer.atlas = atlas;
+      }
+    });
     const bank = await SpriteBank.load('assets/lpc');
     if (!bank) return;
     this.spriteBank = bank;

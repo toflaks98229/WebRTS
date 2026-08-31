@@ -118,6 +118,40 @@ const ICONS = {
   'captain.warlord':       'gui/mutations/mark_of_the_tyrant.png',
 };
 
+/**
+ * Terrain, as *sets* of variants. DCSS tiles are 32x32 squares laid on a square
+ * grid; the renderer stitches several variants into one larger repeating sheet
+ * and clips it to each hexagon, so the ground reads as continuous texture
+ * rather than one stamped square per cell.
+ */
+const TERRAIN = {
+  // battlefield
+  'terrain.grass':  [0, 1, 2, 3].map((i) => `dngn/floor/grass/grass${i}.png`),
+  'terrain.forest': [0, 1, 2, 3].map((i) => `dngn/floor/grass/grass-dark${i}.png`),
+  'terrain.road':   [0, 1, 2].map((i) => `dngn/floor/dirt${i}.png`),
+  'terrain.dirt':   [0, 1, 2, 3].map((i) => `dngn/floor/mud${i}.png`),
+  'terrain.swamp':  [0, 1, 2, 3].map((i) => `dngn/floor/bog_green${i}.png`),
+  'terrain.hill':   [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
+  'terrain.rock':   [0, 1, 2, 3].map((i) => `dngn/wall/stone2_brown${i}.png`),
+  'terrain.water':  ['dngn/water/deep_water.png', 'dngn/water/deep_water2.png'],
+
+  // overworld
+  'terrain.ocean':    ['dngn/water/deep_water.png', 'dngn/water/deep_water2.png'],
+  'terrain.shallows': ['dngn/water/shallow_water.png', 'dngn/water/shallow_water2.png'],
+  'terrain.beach':    [1, 2, 3, 4].map((i) => `dngn/floor/sand${i}.png`),
+  'terrain.plains':   [0, 1, 2, 3].map((i) => `dngn/floor/grass/grass${i}.png`),
+  'terrain.farmland': [0, 1, 2].map((i) => `dngn/floor/dirt${i}.png`),
+  'terrain.steppe':   [0, 1, 2, 3].map((i) => `dngn/floor/moss${i}.png`),
+  'terrain.hills':    [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
+  // Masonry walls read as dungeon on a world map, so mountains get scree and
+  // keep their drawn silhouette on top.
+  'terrain.mountain': [0, 1, 2, 3].map((i) => `dngn/floor/pebble_brown${i}.png`),
+  'terrain.peak':     [0, 1, 2, 3].map((i) => `dngn/wall/stone2_gray${i}.png`),
+
+  // decor drawn on top of the ground. tree1/tree2 are on the exclusion list.
+  'decor.tree': [3, 5, 7, 9].map((i) => `dngn/trees/tree${i}.png`),
+};
+
 async function get(url, tries = 4) {
   for (let i = 0; i < tries; i++) {
     try {
@@ -147,22 +181,34 @@ async function main() {
     licenceNote: 'Verified against https://github.com/crawl/tiles TILES_UNDER_UNKNOWN_LICENSE.md',
     icons: {},
   };
+  manifest.terrain = {};
   const blocked = [];
   const failed = [];
   let bytes = 0;
 
-  for (const [id, rel] of Object.entries(ICONS)) {
+  const grab = async (id, rel) => {
     const base = rel.split('/').pop().toLowerCase();
-    if (excluded.has(base)) { blocked.push(`${id} -> ${rel}`); continue; }
-
+    if (excluded.has(base)) { blocked.push(`${id} -> ${rel}`); return false; }
     const dest = path.join(OUT, `${id}.png`);
     await fs.mkdir(path.dirname(dest), { recursive: true });
     const r = await get(RAW + rel);
-    if (!r) { failed.push(`${id} -> ${rel} (404)`); continue; }
+    if (!r) { failed.push(`${id} -> ${rel} (404)`); return false; }
     const buf = Buffer.from(await r.arrayBuffer());
     await fs.writeFile(dest, buf);
     bytes += buf.length;
-    manifest.icons[id] = rel;
+    return true;
+  };
+
+  for (const [id, rel] of Object.entries(ICONS)) {
+    if (await grab(id, rel)) manifest.icons[id] = rel;
+  }
+
+  for (const [id, list] of Object.entries(TERRAIN)) {
+    const kept = [];
+    for (let i = 0; i < list.length; i++) {
+      if (await grab(`${id}.${i}`, list[i])) kept.push(list[i]);
+    }
+    if (kept.length) manifest.terrain[id] = kept;
   }
 
   if (blocked.length || failed.length) {
@@ -174,7 +220,9 @@ async function main() {
   }
 
   await fs.writeFile(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  console.log(`${Object.keys(manifest.icons).length} icons, ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
+  const variants = Object.values(manifest.terrain).reduce((s, l) => s + l.length, 0);
+  console.log(`${Object.keys(manifest.icons).length} icons + ${variants} terrain tiles`
+    + ` (${Object.keys(manifest.terrain).length} sets), ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

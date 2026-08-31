@@ -8,6 +8,8 @@ const FACTION = {
 };
 
 const MOVE_STEP_TIME = 0.16;   // seconds per hex when a unit walks
+/** World pixels per source pixel of a DCSS tile. */
+const TEX_SCALE = 2;
 /** Screen height of one height-map level, as a fraction of the hex size. */
 export const ELEV_RATIO = 0.45;
 const ATTACK_TIME = 0.45;      // seconds an attack animation plays
@@ -27,6 +29,8 @@ export class Renderer {
     this.time = 0;
     /** Set by the controller once the LPC sheets finish loading; null = procedural. */
     this.sprites = null;
+    /** DCSS ground textures; null = flat colours. */
+    this.atlas = null;
 
     /** Mutated by the controller each frame to drive overlays. */
     this.view = {
@@ -155,6 +159,7 @@ export class Renderer {
     ctx.fillRect(0, 0, this.w, this.h);
 
     ctx.save();
+    ctx.imageSmoothingEnabled = false;   // pixel art, at every zoom
     const z = this.camera.zoom * this.dpr;
     ctx.setTransform(
       z, 0, 0, z,
@@ -202,9 +207,17 @@ export class Renderer {
 
       if (tile.elev > 0) this.drawSkirt(ctx, tile, def, dy);
 
+      // The hexagon supplies the shape; the pattern supplies the texture, and
+      // stays pinned to world space so neighbours join up seamlessly.
+      const pat = this.atlas?.pattern(ctx, def.id, TEX_SCALE);
       this.hexPath(ctx, tile.hex);
-      ctx.fillStyle = tile.decor > 0.5 ? def.color2 : def.color;
+      ctx.fillStyle = pat || (tile.decor > 0.5 ? def.color2 : def.color);
       ctx.fill();
+      if (pat) {
+        // A wash of the terrain colour keeps the palette coherent with the UI.
+        ctx.fillStyle = withAlpha(def.color, 0.28);
+        ctx.fill();
+      }
 
       // Higher ground catches more light, so it reads at a glance.
       if (tile.elev > 0) {
@@ -233,9 +246,13 @@ export class Renderer {
     for (let i = front.length - 1; i >= 0; i--) ctx.lineTo(front[i].x, front[i].y + dy + depth);
     ctx.closePath();
 
+    // Cliffs are rock whatever grows on top of them.
+    const rock = this.atlas?.pattern(ctx, 'rock', TEX_SCALE);
+    if (rock) { ctx.fillStyle = rock; ctx.fill(); }
+
     const grad = ctx.createLinearGradient(0, pts[1].y + dy, 0, pts[1].y + dy + depth);
-    grad.addColorStop(0, shadeHex(def.color, -0.35));
-    grad.addColorStop(1, shadeHex(def.color, -0.68));
+    grad.addColorStop(0, rock ? 'rgba(20,16,12,0.35)' : shadeHex(def.color, -0.35));
+    grad.addColorStop(1, rock ? 'rgba(12,10,8,0.78)' : shadeHex(def.color, -0.68));
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.45)';
@@ -245,6 +262,11 @@ export class Renderer {
 
   drawDecor(ctx, tile, c, s) {
     const r = tile.decor;
+    if (this.atlas) {
+      // With textured ground only real objects are still worth drawing.
+      if (tile.terrain === 'forest') this.drawTrees(ctx, tile, c, s);
+      return;
+    }
     switch (tile.terrain) {
       case 'forest': {
         for (let i = 0; i < 3; i++) {
@@ -319,6 +341,20 @@ export class Renderer {
       }
       default: break;
     }
+  }
+
+  /** Three DCSS trees scattered inside the hex, back-to-front. */
+  drawTrees(ctx, tile, c, s) {
+    const img = this.atlas.decor('tree', tile.decor);
+    if (!img) return;
+    const w = s * 0.85;
+    const spots = [];
+    for (let i = 0; i < 3; i++) {
+      const a = tile.decor * 6.28 + i * 2.1;
+      spots.push({ x: c.x + Math.cos(a) * s * 0.34, y: c.y + Math.sin(a) * s * 0.28 });
+    }
+    spots.sort((p, q) => p.y - q.y);
+    for (const p of spots) ctx.drawImage(img, p.x - w / 2, p.y - w * 0.78, w, w);
   }
 
   drawOverlays(ctx) {
@@ -683,6 +719,12 @@ function bar(ctx, x, y, w, h, pct, bg, fg) {
 }
 
 /** Darken (t<0) or lighten (t>0) a #rrggbb colour. */
+/** #rrggbb -> rgba() at the given alpha. */
+function withAlpha(hex, a) {
+  const [r, g, b] = hex2rgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 function shadeHex(hex, t) {
   const [r, g, b] = hex2rgb(hex).map((v) => Math.round(t < 0 ? v * (1 + t) : v + (255 - v) * t));
   return `rgb(${r},${g},${b})`;

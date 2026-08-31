@@ -80,5 +80,107 @@
     "captain.inspiring": "gui/mutations/divine_attributes.png",
     "captain.unbreakable": "gui/mutations/strong_willed_3.png",
     "captain.warlord": "gui/mutations/mark_of_the_tyrant.png"
+  },
+  "terrain": {
+    "terrain.grass": [
+      "dngn/floor/grass/grass0.png",
+      "dngn/floor/grass/grass1.png",
+      "dngn/floor/grass/grass2.png",
+      "dngn/floor/grass/grass3.png"
+    ],
+    "terrain.forest": [
+      "dngn/floor/grass/grass-dark0.png",
+      "dngn/floor/grass/grass-dark1.png",
+      "dngn/floor/grass/grass-dark2.png",
+      "dngn/floor/grass/grass-dark3.png"
+    ],
+    "terrain.road": [
+      "dngn/floor/dirt0.png",
+      "dngn/floor/dirt1.png",
+      "dngn/floor/dirt2.png"
+    ],
+    "terrain.dirt": [
+      "dngn/floor/mud0.png",
+      "dngn/floor/mud1.png",
+      "dngn/floor/mud2.png",
+      "dngn/floor/mud3.png"
+    ],
+    "terrain.swamp": [
+      "dngn/floor/bog_green0.png",
+      "dngn/floor/bog_green1.png",
+      "dngn/floor/bog_green2.png",
+      "dngn/floor/bog_green3.png"
+    ],
+    "terrain.hill": [
+      "dngn/floor/pebble_brown0.png",
+      "dngn/floor/pebble_brown1.png",
+      "dngn/floor/pebble_brown2.png",
+      "dngn/floor/pebble_brown3.png"
+    ],
+    "terrain.rock": [
+      "dngn/wall/stone2_brown0.png",
+      "dngn/wall/stone2_brown1.png",
+      "dngn/wall/stone2_brown2.png",
+      "dngn/wall/stone2_brown3.png"
+    ],
+    "terrain.water": [
+      "dngn/water/deep_water.png",
+      "dngn/water/deep_water2.png"
+    ],
+    "terrain.ocean": [
+      "dngn/water/deep_water.png",
+      "dngn/water/deep_water2.png"
+    ],
+    "terrain.shallows": [
+      "dngn/water/shallow_water.png",
+      "dngn/water/shallow_water2.png"
+    ],
+    "terrain.beach": [
+      "dngn/floor/sand1.png",
+      "dngn/floor/sand2.png",
+      "dngn/floor/sand3.png",
+      "dngn/floor/sand4.png"
+    ],
+    "terrain.plains": [
+      "dngn/floor/grass/grass0.png",
+      "dngn/floor/grass/grass1.png",
+      "dngn/floor/grass/grass2.png",
+      "dngn/floor/grass/grass3.png"
+    ],
+    "terrain.farmland": [
+      "dngn/floor/dirt0.png",
+      "dngn/floor/dirt1.png",
+      "dngn/floor/dirt2.png"
+    ],
+    "terrain.steppe": [
+      "dngn/floor/moss0.png",
+      "dngn/floor/moss1.png",
+      "dngn/floor/moss2.png",
+      "dngn/floor/moss3.png"
+    ],
+    "terrain.hills": [
+      "dngn/floor/pebble_brown0.png",
+      "dngn/floor/pebble_brown1.png",
+      "dngn/floor/pebble_brown2.png",
+      "dngn/floor/pebble_brown3.png"
+    ],
+    "terrain.mountain": [
+      "dngn/floor/pebble_brown0.png",
+      "dngn/floor/pebble_brown1.png",
+      "dngn/floor/pebble_brown2.png",
+      "dngn/floor/pebble_brown3.png"
+    ],
+    "terrain.peak": [
+      "dngn/wall/stone2_gray0.png",
+      "dngn/wall/stone2_gray1.png",
+      "dngn/wall/stone2_gray2.png",
+      "dngn/wall/stone2_gray3.png"
+    ],
+    "decor.tree": [
+      "dngn/trees/tree3.png",
+      "dngn/trees/tree5.png",
+      "dngn/trees/tree7.png",
+      "dngn/trees/tree9.png"
+    ]
   }
 }

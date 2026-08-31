@@ -43,6 +43,7 @@ export class LabScene {
     this.battle = new Battle({ cols: 15, rows: 9, seed: this.app.rng.int(0, 1e9), biome: this.biome });
     this.renderer = new Renderer(this.canvas, this.battle, this.layout, this.camera, this.effects);
     this.renderer.sprites = this.app.spriteBank || null;
+    this.renderer.atlas = this.app.terrainAtlas || null;
     this.placed = [];
     for (const k of kept) this.place(k.hex, k);
   }

@@ -1,10 +1,20 @@
 import { neighbors, key } from '../hex/hex.js';
 import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
 
+/** World pixels per source pixel; the map hex is smaller than a battle hex. */
+const TEX_SCALE = 1.4;
+
 const FACTION = {
   player: { main: '#d8b45a', dark: '#6b5324' },
   enemy: { main: '#b0503f', dark: '#5e2820' },
 };
+
+function withAlpha(hex, a) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
 
 /** Canvas renderer for the overworld. */
 export class WorldRenderer {
@@ -17,6 +27,8 @@ export class WorldRenderer {
     this.time = 0;
 
     this.view = { hover: null, route: null, showGrid: true };
+    /** DCSS ground textures; null = flat colours. */
+    this.atlas = null;
     this.resize();
   }
 
@@ -47,6 +59,7 @@ export class WorldRenderer {
     ctx.fillRect(0, 0, this.w, this.h);
 
     ctx.save();
+    ctx.imageSmoothingEnabled = false;
     const z = this.camera.zoom * this.dpr;
     ctx.setTransform(
       z, 0, 0, z,
@@ -83,9 +96,11 @@ export class WorldRenderer {
       const def = worldTerrain(t.terrain);
       const c = this.layout.toPixel(t.hex);
 
+      const pat = this.atlas?.pattern(ctx, def.id, TEX_SCALE);
       this.hexPath(ctx, t.hex);
-      ctx.fillStyle = t.decor > 0.5 ? def.color2 : def.color;
+      ctx.fillStyle = pat || (t.decor > 0.5 ? def.color2 : def.color);
       ctx.fill();
+      if (pat) { ctx.fillStyle = withAlpha(def.color, 0.32); ctx.fill(); }
       if (this.view.showGrid && def.passable) {
         ctx.strokeStyle = 'rgba(0,0,0,0.22)';
         ctx.lineWidth = 1;
@@ -97,6 +112,22 @@ export class WorldRenderer {
 
   drawTileDecor(ctx, t, c, s) {
     const r = t.decor;
+    if (this.atlas) {
+      // Mountains need their silhouette even over a textured ground.
+      if (t.terrain === 'mountain' || t.terrain === 'peak') { this.drawPeak(ctx, t, c, s); return; }
+      if (t.terrain === 'forest') {
+        const img = this.atlas.decor('tree', r);
+        if (img) {
+          for (let i = 0; i < 2; i++) {
+            const a = r * 6.28 + i * 2.6;
+            const x = c.x + Math.cos(a) * s * 0.26;
+            const y = c.y + Math.sin(a) * s * 0.2;
+            ctx.drawImage(img, x - s * 0.34, y - s * 0.5, s * 0.68, s * 0.68);
+          }
+        }
+      }
+      return;
+    }
     switch (t.terrain) {
       case 'forest':
         ctx.fillStyle = '#20321b';
@@ -169,6 +200,25 @@ export class WorldRenderer {
       default:
         break;
     }
+  }
+
+  /** The triangular massif that makes high ground legible at map scale. */
+  drawPeak(ctx, t, c, s) {
+    const tall = t.terrain === 'peak' ? 0.62 : 0.46;
+    ctx.fillStyle = t.terrain === 'peak' ? '#a9a7a1' : '#6e6b64';
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y - s * tall);
+    ctx.lineTo(c.x - s * 0.42, c.y + s * 0.3);
+    ctx.lineTo(c.x + s * 0.42, c.y + s * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = t.terrain === 'peak' ? '#e6e6e2' : '#918e86';
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y - s * tall);
+    ctx.lineTo(c.x - s * 0.16, c.y - s * 0.06);
+    ctx.lineTo(c.x + s * 0.10, c.y - s * 0.02);
+    ctx.closePath();
+    ctx.fill();
   }
 
   drawRoads(ctx) {

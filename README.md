@@ -24,8 +24,9 @@ node tools/fetch-lpc.mjs
 node tools/fetch-dcss.mjs
 ```
 
-앞은 캐릭터 스프라이트(LPC), 뒤는 UI 아이콘(DCSS)입니다. 둘 다 없어도 게임은
-그대로 실행됩니다 — 렌더러는 자체 도형으로, UI 는 이모지로 되돌아갑니다.
+앞은 캐릭터 스프라이트(LPC), 뒤는 UI 아이콘과 지형 타일(DCSS)입니다. 둘 다 없어도
+게임은 그대로 실행됩니다 — 지형은 단색으로, 유닛은 자체 도형으로, 아이콘은
+이모지로 되돌아갑니다.
 
 ## 조작
 
@@ -175,7 +176,8 @@ src/
   battle/             grid(높이맵) · unit · combat(명중·피해) · battle(턴 진행) · ai
   campaign/           world(맵 생성) · campaign(시간·부대·조우·계약·급여)
                       company(명부·금고·창고) · contracts · bands · loot
-  render/             camera · renderer(전장) · worldRenderer(지도) · sprites(LPC) · effects
+  render/             camera · renderer(전장) · worldRenderer(지도) · sprites(LPC)
+                      terrainAtlas(DCSS 지형 패턴) · effects
   ui/                 overlay(공용) · hud(전투) · worldHud(지도)
                       settlementPanel(마을) · characterPanel(특성·단장 트리)
                       perkView(특성 노드 공용 렌더) · icons(DCSS 타일 로더)
@@ -191,7 +193,7 @@ src/
 | --- | --- |
 | 코드 | GPL-3.0-or-later — [LICENSE](LICENSE) |
 | 캐릭터 아트 (`assets/lpc/`) | 파일마다 상이 — [ATTRIBUTION.md](assets/lpc/ATTRIBUTION.md) |
-| UI 아이콘 (`assets/dcss/`) | CC0 1.0 — Dungeon Crawl Stone Soup |
+| UI 아이콘 · 지형 타일 (`assets/dcss/`) | CC0 1.0 — Dungeon Crawl Stone Soup |
 
 번들된 LPC 아트는 CC0 · CC-BY · CC-BY-SA · OGA-BY · GPL 이 섞여 있고, 일부는
 CC-BY-SA 3.0 단독이라 GPL 로 덮을 수 없습니다. 재배포 시 조건은

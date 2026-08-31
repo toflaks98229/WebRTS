@@ -24,6 +24,7 @@ export class CampaignScene {
     this.camera.minZoom = 0.35;
     this.camera.maxZoom = 2.4;
     this.renderer = new WorldRenderer(this.canvas, campaign, this.layout, this.camera);
+    this.renderer.atlas = app.terrainAtlas || null;
 
     this.speed = 1;
     this.userMovedCamera = false;
