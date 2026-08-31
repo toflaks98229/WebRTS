@@ -8,6 +8,7 @@ import { overlay } from './ui/overlay.js';
 import { Campaign } from './campaign/campaign.js';
 import { CampaignScene } from './scenes/campaignScene.js';
 import { BattleScene } from './scenes/battleScene.js';
+import { LabScene } from './scenes/labScene.js';
 
 /** How many brothers the company can field at once. */
 export const MAX_COMPANY_SIZE = 9;
@@ -43,7 +44,10 @@ class App {
   }
 
   newCampaign() {
-    const roster = STARTING_KINDS.map((k) => new Unit(TEMPLATES[k], this.rng, { faction: 'player' }));
+    // The first sword is the captain; the tree they feed belongs to the outfit,
+    // so a successor inherits everything the company has learned.
+    const roster = STARTING_KINDS.map((k, i) =>
+      new Unit(TEMPLATES[k], this.rng, { faction: 'player', captain: i === 0 }));
     this.campaign = new Campaign({
       seed: this.rng.int(0, 1e9), cols: 28, rows: 18, roster, crowns: STARTING_CROWNS,
     });
@@ -77,7 +81,10 @@ class App {
     const fighters = this.company.alive;
     if (!fighters.length) { this.gameOver(); return; }
     // Wounds and battered armour carry into the fight; only turn state resets.
-    fighters.forEach((u) => u.prepareForBattle());
+    fighters.forEach((u) => {
+      u.prepareForBattle();
+      u.companyPerks = this.company.captainPerks;
+    });
 
     const enemies = band.roster.map((id) => new Unit(TEMPLATES[id], this.rng, { faction: 'enemy' }));
     this.setScene(new BattleScene(this, {
@@ -97,6 +104,8 @@ class App {
     for (const u of this.company.buryDead()) {
       this.campaign.note(`${u.name} 이(가) 전사했다.`, 'death');
     }
+    const promoted = this.company.ensureCaptain();
+    if (promoted) this.campaign.note(`${promoted.name} 이(가) 새 단장이 되었다.`, 'renown');
     for (const id of report.leftovers || []) this.company.stashItem(id);
     if (report.leftovers?.length) {
       this.campaign.note(`노획품 ${report.leftovers.length}점을 창고에 넣었다.`, 'loot');
@@ -104,6 +113,14 @@ class App {
 
     this.setScene(this.campaignScene);
     if (!this.company.size) this.gameOver();
+  }
+
+  /** Debug sandbox. Does not touch the campaign; Esc or the button returns. */
+  openLab() {
+    if (this.scene instanceof LabScene) return;
+    this.returnScene = this.scene;
+    this.labScene = new LabScene(this, { onExit: () => this.setScene(this.returnScene) });
+    this.setScene(this.labScene);
   }
 
   gameOver() {
@@ -148,12 +165,15 @@ class App {
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT') return;
       this.keys.add(e.key.toLowerCase());
+      // The lab is reachable from anywhere except mid-battle.
+      if (e.key.toLowerCase() === 'l' && !(this.scene instanceof BattleScene)) { this.openLab(); return; }
       this.scene?.onKeyDown?.(e);
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur', () => this.keys.clear());
     window.addEventListener('resize', () => this.scene?.resize());
     document.getElementById('btn-help').addEventListener('click', () => this.scene?.showHelp?.());
+    document.getElementById('btn-lab').addEventListener('click', () => this.openLab());
 
     // Fires once as soon as the canvas has real layout, which the constructor does not.
     if (window.ResizeObserver) new ResizeObserver(() => this.scene?.resize()).observe(c);

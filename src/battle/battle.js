@@ -21,6 +21,8 @@ export class Battle {
     this.phase = PHASE.deploy;
     this.logLines = [];
     this.result = null;
+    this.xpPool = 0;          // experience the fallen are worth, split at the end
+    this.levelUps = [];
   }
 
   // ---------------------------------------------------------------- setup
@@ -82,17 +84,20 @@ export class Battle {
       costOf: (h, from) => {
         if (!this.grid.passable(h)) return null;
         if (this.unitAt(h)) return null;
-        return this.stepCost(from, h);
+        return this.stepCost(from, h, unit);
       },
       inZOC: (h) => zoc.has(key(h)),
     };
   }
 
   /** Terrain cost of entering `to`, plus the climb if `from` sits lower. */
-  stepCost(from, to) {
+  stepCost(from, to, unit) {
     const t = this.grid.terrainAt(to);
     const climb = from ? this.grid.climbCost(from, to) : { ap: 0, fat: 0 };
-    return { ap: t.moveCost + climb.ap, fat: t.moveFatigue + climb.fat };
+    let ap = t.moveCost;
+    let climbAP = climb.ap;
+    if (unit?.hasPerk('pathfinder')) { ap = Math.max(2, ap - 1); climbAP = Math.max(0, climbAP - 1); }
+    return { ap: ap + climbAP, fat: t.moveFatigue + climb.fat };
   }
 
   reachableFor(unit) {
@@ -130,7 +135,7 @@ export class Battle {
 
     for (const step of path) {
       const zoc = this.zocFor(unit);
-      const cost = this.stepCost(prev, step);
+      const cost = this.stepCost(prev, step, unit);
       let ap = cost.ap;
       let fat = cost.fat;
       if (zoc.has(key(prev))) { ap += 2; fat += 5; }
@@ -225,9 +230,14 @@ export class Battle {
     this.log(`${unit.name} 이(가) 쓰러졌다.`, 'death', unit.faction);
     this.bus.emit('unit:death', { unit, killer });
 
+    // Experience is banked and only applied once the fight is over, so nobody
+    // grows mid-battle.
+    const worth = 45 + unit.level * 15 + Math.round(unit.hpBase / 3);
+    if (unit.faction === 'enemy') this.xpPool += worth;
+
     if (killer) {
       killer.kills++;
-      killer.xp += 50;
+      killer.pendingXP = (killer.pendingXP || 0) + Math.round(worth * 0.5);
       boostMorale(this, killer, 20, '적을 쓰러뜨림');
       for (const ally of this.alliesOf(killer)) {
         if (distance(ally.hex, unit.hex) <= 4) boostMorale(this, ally, -10, '아군의 전공');
@@ -299,9 +309,30 @@ export class Battle {
     return false;
   }
 
+  /**
+   * Split the pool: half goes to whoever landed the killing blows, half is
+   * shared evenly so the shield wall grows too.
+   */
+  awardExperience() {
+    const survivors = this.units.filter((u) => u.faction === 'player' && u.alive);
+    if (!survivors.length) return [];
+    const share = Math.round((this.xpPool * 0.5) / survivors.length);
+    const ups = [];
+    for (const u of survivors) {
+      const gained = u.gainXP(share + (u.pendingXP || 0), this.rng);
+      u.pendingXP = 0;
+      if (gained) {
+        ups.push({ unit: u, levels: gained });
+        this.log(`${u.name} 이(가) ${u.level} 레벨이 되었다.`, 'special', 'player');
+      }
+    }
+    return ups;
+  }
+
   finish(result) {
     this.phase = PHASE.over;
     this.result = result;
+    this.levelUps = this.awardExperience();
     this.log(result === 'victory' ? '전투에서 승리했다!' : '부대가 패주했다...', 'round');
     this.bus.emit('battle:over', { result, battle: this });
   }

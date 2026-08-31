@@ -1,6 +1,7 @@
 import { WEAPONS, SHIELDS, BODY_ARMOR, HELMETS, item } from '../data/items.js';
 import { SKILLS } from '../data/skills.js';
 import { randomName } from '../data/units.js';
+import { levelForXP, MAX_LEVEL, PERKS } from '../data/perks.js';
 
 export const MAX_AP = 9;
 export const FATIGUE_RECOVERY = 15;
@@ -13,6 +14,12 @@ export const MORALE = {
   fleeing:   { id: 'fleeing',   name: '패주',   order: 0, hit: -40, defense: -30, color: '#c2453a' },
 };
 const MORALE_LADDER = ['fleeing', 'breaking', 'wavering', 'steady', 'confident'];
+
+/** Attribute gain rolled at each level-up, as [min, max]. */
+const LEVEL_GAINS = {
+  hpBase: [2, 5], fatigueBase: [2, 6], resolveBase: [1, 3], initiativeBase: [1, 4],
+  meleeSkill: [1, 3], rangedSkill: [1, 3], meleeDefenseBase: [0, 2], rangedDefenseBase: [0, 2],
+};
 
 let nextId = 1;
 
@@ -28,10 +35,11 @@ export class Unit {
     this.portrait = tpl.portrait;
     this.isBeast = !!tpl.beast;
 
-    // Base attributes
-    this.hpMax = roll(tpl.hp);
+    // Base attributes. Perks scale several of these, so the rolled value is
+    // kept as `*Base` and the effective number is a getter.
+    this.hpBase = roll(tpl.hp);
     this.fatigueBase = roll(tpl.fatigue);
-    this.resolve = roll(tpl.resolve);
+    this.resolveBase = roll(tpl.resolve);
     this.initiativeBase = roll(tpl.initiative);
     this.meleeSkill = roll(tpl.meleeSkill);
     this.rangedSkill = roll(tpl.rangedSkill);
@@ -47,6 +55,15 @@ export class Unit {
     if (this.weapon?.ammo) this.ammo = this.weapon.ammo;
     if (this.weapon?.kind === 'xbow') this.loaded = true;
 
+    // Progression
+    this.level = 1;
+    this.xp = 0;
+    this.perkPoints = 0;
+    this.perks = new Set();
+    this.isCaptain = !!opts.captain;
+    /** Captain-tree nodes in force for this unit's side; set when a battle starts. */
+    this.companyPerks = new Set();
+
     // Battle state
     this.hp = this.hpMax;
     this.fatigue = 0;
@@ -55,23 +72,83 @@ export class Unit {
     this.morale = 'steady';
     this.alive = true;
     this.stunned = 0;
-    this.stances = new Set();   // shieldwall / spearwall / riposte, cleared each turn
+    this.overwhelmed = 0;       // rounds of the Overwhelm penalty left
+    this.livesUsed = false;     // Nine Lives, once per battle
+    this.stances = new Set();
     this.hasActed = false;
     this.waited = false;
-    this.level = 1;
-    this.xp = 0;
     this.kills = 0;
   }
 
-  // ---- derived stats -------------------------------------------------
-  get gearFatigue() {
-    return (this.weapon?.fatigue || 0) + (this.shield?.fatigue || 0)
-         + (this.body?.fatigue || 0) + (this.head?.fatigue || 0);
+  // ---- perks ---------------------------------------------------------
+  hasPerk(id) { return this.perks.has(id); }
+  /** Captain-tree node active for this unit's company. */
+  hasCompany(id) { return this.companyPerks.has(id); }
+  /** Captain-tree nodes that only apply to the captain themselves. */
+  hasCaptainPerk(id) { return this.isCaptain && this.companyPerks.has(id); }
+
+  takePerk(id) {
+    if (!PERKS[id] || this.perks.has(id)) return false;
+    if (this.perkPoints < 1) return false;
+    if (PERKS[id].tier > this.level) return false;
+    this.perks.add(id);
+    this.perkPoints--;
+    return true;
   }
-  get fatigueMax() { return Math.max(20, this.fatigueBase - this.gearFatigue); }
+
+  /**
+   * Award experience and apply any level-ups. Returns how many levels were
+   * gained so the caller can announce them.
+   */
+  gainXP(amount, rng) {
+    if (this.level >= MAX_LEVEL) return 0;
+    const bonus = this.hasPerk('student') ? 1.3 : 1;
+    this.xp += Math.round(amount * bonus);
+    const target = Math.min(MAX_LEVEL, levelForXP(this.xp));
+    let gained = 0;
+    while (this.level < target) {
+      this.level++;
+      this.perkPoints++;
+      gained++;
+      if (rng) {
+        for (const [attr, [lo, hi]] of Object.entries(LEVEL_GAINS)) this[attr] += rng.int(lo, hi);
+        this.hp = Math.min(this.hpMax, this.hp + 4);
+      }
+    }
+    return gained;
+  }
+
+  // ---- derived stats -------------------------------------------------
+  get hpMax() { return Math.round(this.hpBase * (this.hasPerk('colossus') ? 1.2 : 1)); }
+
+  get resolve() {
+    let r = this.resolveBase;
+    if (this.hasCompany('rally')) r += 10;
+    if (this.hasPerk('fortifiedMind')) r = Math.round(r * 1.25);
+    return r;
+  }
+
+  get gearFatigue() {
+    const handHeld = (this.weapon?.fatigue || 0) + (this.shield?.fatigue || 0);
+    const worn = (this.body?.fatigue || 0) + (this.head?.fatigue || 0);
+    let total = (this.hasPerk('bagsAndBelts') ? handHeld * 0.5 : handHeld) + worn;
+    if (this.hasPerk('brawny')) total *= 0.8;
+    return Math.round(total);
+  }
+
+  get fatigueMax() {
+    let base = this.fatigueBase;
+    if (this.hasCompany('discipline')) base += 10;
+    if (this.hasPerk('brawny')) base = Math.round(base * 1.15);
+    return Math.max(20, base - this.gearFatigue);
+  }
   get fatigueLeft() { return Math.max(0, this.fatigueMax - this.fatigue); }
-  /** 0..1 — how spent the unit is. Drives the defense penalty. */
+  /** 0..1 - how spent the unit is. Drives the defense penalty. */
   get exhaustion() { return this.fatigueMax ? this.fatigue / this.fatigueMax : 0; }
+
+  get maxAP() { return MAX_AP + (this.hasCaptainPerk('warlord') ? 1 : 0); }
+
+  get fatigueRecovery() { return this.hasPerk('relentless') ? 25 : FATIGUE_RECOVERY; }
 
   get initiative() {
     return Math.max(0, Math.round(this.initiativeBase - this.fatigue - this.gearFatigue * 0.5));
@@ -79,28 +156,56 @@ export class Unit {
 
   get moraleDef() { return MORALE[this.morale]; }
 
-  get meleeDefense() {
-    let d = this.meleeDefenseBase;
-    if (this.shield && this.shield.durability > 0) d += this.shield.meleeDefense;
-    if (this.stances.has('shieldwall') && this.shield?.durability > 0) d += this.shield.meleeDefense;
-    d += this.moraleDef.defense;
-    d -= Math.round(this.exhaustion * 15);
+  /** Morale penalties, halved by Indomitable and ignored by the captain's node. */
+  get moraleHit() {
+    const v = this.moraleDef.hit;
+    if (v >= 0) return v;
+    return this.hasPerk('indomitable') ? Math.round(v / 2) : v;
+  }
+
+  get moraleDefense() {
+    const v = this.moraleDef.defense;
+    if (v >= 0) return v;
+    return this.hasPerk('indomitable') ? Math.round(v / 2) : v;
+  }
+
+  /** Shield contribution, boosted by Shield Expert. */
+  shieldBonus(kind) {
+    if (!this.shield || this.shield.durability <= 0) return 0;
+    const base = kind === 'ranged' ? this.shield.rangedDefense : this.shield.meleeDefense;
+    return Math.round(base * (this.hasPerk('shieldExpert') ? 1.25 : 1));
+  }
+
+  /** Extra defense as wounds mount, from Last Stand. */
+  get lastStandBonus() {
+    if (!this.hasPerk('lastStand')) return 0;
+    return Math.round((1 - this.hp / this.hpMax) * 20);
+  }
+
+  defenseCommon() {
+    let d = this.moraleDefense - Math.round(this.exhaustion * 15) + this.lastStandBonus;
     if (this.stunned > 0) d -= 20;
+    if (this.hasCaptainPerk('champion')) d += 8;
     return d;
   }
 
+  get meleeDefense() {
+    let d = this.meleeDefenseBase + this.shieldBonus('melee');
+    if (this.stances.has('shieldwall')) d += this.shieldBonus('melee');
+    return d + this.defenseCommon();
+  }
+
   get rangedDefense() {
-    let d = this.rangedDefenseBase;
-    if (this.shield && this.shield.durability > 0) d += this.shield.rangedDefense;
-    if (this.stances.has('shieldwall') && this.shield?.durability > 0) d += this.shield.rangedDefense;
-    d += this.moraleDef.defense;
-    d -= Math.round(this.exhaustion * 15);
-    if (this.stunned > 0) d -= 20;
-    return d;
+    let d = this.rangedDefenseBase + this.shieldBonus('ranged');
+    if (this.stances.has('shieldwall')) d += this.shieldBonus('ranged');
+    if (this.hasPerk('anticipation')) d += 12;
+    return d + this.defenseCommon();
   }
 
   get armorTotal() { return (this.body?.armor || 0) + (this.head?.armor || 0); }
   get armorMax() { return (this.body?.max || 0) + (this.head?.max || 0); }
+  /** Total worn armour, used by Nimble - light kit, big reduction. */
+  get armorWeight() { return (this.body?.fatigue || 0) + (this.head?.fatigue || 0); }
 
   /** Skills currently usable: weapon skills plus innate ones. */
   get skills() {
@@ -145,14 +250,15 @@ export class Unit {
    */
   prepareForBattle() {
     this.fatigue = 0;
-    this.ap = MAX_AP;
+    this.ap = this.maxAP;
     this.morale = 'steady';
     this.stunned = 0;
+    this.overwhelmed = 0;
+    this.livesUsed = false;
     this.stances.clear();
     this.hasActed = false;
     this.waited = false;
     this.turnRound = -1;
-    this.hex = null;
     if (this.weapon?.ammo) this.ammo = this.weapon.ammo;
     if (this.weapon?.kind === 'xbow') this.loaded = true;
     return this;
@@ -162,35 +268,29 @@ export class Unit {
   resetForBattle() {
     this.prepareForBattle();
     this.hp = this.hpMax;
-    this.fatigue = 0;
-    this.ap = MAX_AP;
-    this.morale = 'steady';
     this.alive = true;
-    this.stunned = 0;
-    this.stances.clear();
-    this.hasActed = false;
-    this.waited = false;
     if (this.body) this.body.armor = this.body.max;
     if (this.head) this.head.armor = this.head.max;
     if (this.shield) this.shield.durability = this.shield.max;
-    if (this.weapon?.ammo) this.ammo = this.weapon.ammo;
-    if (this.weapon?.kind === 'xbow') this.loaded = true;
     return this;
   }
 
   // ---- turn lifecycle ------------------------------------------------
   beginTurn() {
-    this.ap = MAX_AP;
-    this.fatigue = Math.max(0, this.fatigue - FATIGUE_RECOVERY);
+    this.ap = this.maxAP;
+    this.fatigue = Math.max(0, this.fatigue - this.fatigueRecovery);
     this.stances.clear();
     this.waited = false;
-    if (this.stunned > 0) { this.stunned--; this.ap = Math.floor(MAX_AP / 2); }
+    if (this.overwhelmed > 0) this.overwhelmed--;
+    if (this.stunned > 0) { this.stunned--; this.ap = Math.floor(this.maxAP / 2); }
   }
 
   endTurn() { this.hasActed = true; }
 
   // ---- morale --------------------------------------------------------
   shiftMorale(steps) {
+    // The captain's own resolve is a company fixture.
+    if (steps < 0 && this.hasCaptainPerk('unbreakable')) return false;
     const i = MORALE_LADDER.indexOf(this.morale);
     const n = Math.max(0, Math.min(MORALE_LADDER.length - 1, i + steps));
     const changed = MORALE_LADDER[n] !== this.morale;

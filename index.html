@@ -33,7 +33,11 @@
     <div id="round-info" class="battle-only"><span class="label">라운드</span> <b id="round-num">1</b></div>
     <div id="turn-order" class="battle-only turn-order"></div>
 
+    <!-- lab -->
+    <div id="lab-info" class="lab-only grow"></div>
+
     <div class="top-actions">
+      <button id="btn-lab" class="btn ghost" title="유닛 배치 실험실 (L)">실험실</button>
       <button id="btn-help" class="btn ghost" title="도움말">?</button>
     </div>
   </header>
@@ -45,12 +49,23 @@
     <aside id="panel-left" class="panel">
       <div id="unit-card" class="unit-card empty battle-only">유닛을 선택하세요</div>
       <div id="company-card" class="company-card campaign-only"></div>
+      <div id="lab-palette" class="company-card lab-only"></div>
     </aside>
 
     <aside id="panel-right" class="panel">
-      <div class="panel-title"><span class="battle-only">전투 기록</span><span class="campaign-only">여정 기록</span></div>
+      <div class="panel-title">
+        <span class="battle-only">전투 기록</span>
+        <span class="campaign-only">여정 기록</span>
+        <span class="lab-only">실험실</span>
+      </div>
       <div id="log" class="log battle-only"></div>
       <div id="world-log" class="log campaign-only"></div>
+      <div id="lab-notes" class="log lab-only">
+        <p>배치한 그대로 전투가 열린다. 캠페인 상태는 건드리지 않는다.</p>
+        <p><b>좌클릭</b> 배치 · <b>우클릭</b> 제거</p>
+        <p><b>Space</b> 전투 시작 · <b>R</b> 지형 재생성 · <b>Esc</b> 지도로</p>
+        <p>레벨 슬라이더는 특성 점수만 올린다. 능력치는 그대로 두어 특성 효과만 따로 비교할 수 있다.</p>
+      </div>
     </aside>
 
     <div id="hover-tip" class="tip hidden"></div>
@@ -70,6 +85,10 @@
     <!-- campaign -->
     <div id="world-hint" class="campaign-only world-hint"></div>
     <div id="world-actions" class="campaign-only world-actions"></div>
+
+    <!-- lab -->
+    <div id="lab-hint" class="lab-only world-hint"></div>
+    <div id="lab-actions" class="lab-only world-actions"></div>
   </footer>
 </div>
 

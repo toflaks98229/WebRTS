@@ -1,7 +1,7 @@
 import { overlay, esc } from './overlay.js';
 import { SETTLEMENTS } from '../data/worldTerrain.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
-import { hireCostOf, wageOf, itemDef, itemValue, slotOf, SELL_RATE } from '../campaign/company.js';
+import { hireCostOf, wageOf, itemDef, itemValue, slotOf } from '../campaign/company.js';
 
 const TABS = [
   { id: 'contracts', name: '계약' },
@@ -124,12 +124,14 @@ export class SettlementPanel {
     return stock.map((id) => {
       const def = itemDef(id);
       if (!def) return '';
+      const price = cam.priceOf(id);
+      const cut = price < def.value ? ` <span class="sp-tag">정가 ${def.value}</span>` : '';
       return `<div class="sp-row">
         <div class="sp-main">
           <div class="sp-name">${esc(def.name)} <span class="sp-tag">${SLOT_NAME[slotOf(id)] || ''}</span></div>
           <div class="sp-meta">${itemSummary(id, def)}</div>
         </div>
-        <button class="btn" data-buy="${id}" ${cam.company.canAfford(def.value) ? '' : 'disabled'}>${def.value} 크라운</button>
+        <button class="btn" data-buy="${id}" ${cam.company.canAfford(price) ? '' : 'disabled'}>${price} 크라운${cut}</button>
       </div>`;
     }).join('');
   }
@@ -156,7 +158,7 @@ export class SettlementPanel {
         </div>
         <div class="sp-btns">
           <button class="btn" data-equip="${i}">${this.equipping === i ? '취소' : '장착'}</button>
-          <button class="btn" data-sell="${i}">${Math.round(itemValue(id) * SELL_RATE)} 크라운에 판매</button>
+          <button class="btn" data-sell="${i}">${Math.round(itemValue(id) * c.sellRate)} 크라운에 판매</button>
         </div>
       </div>`;
     }).join('');

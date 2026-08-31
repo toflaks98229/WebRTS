@@ -9,6 +9,7 @@ import { WEAPONS, SHIELDS, BODY_ARMOR, HELMETS } from '../data/items.js';
 import { Unit } from '../battle/unit.js';
 import { TEMPLATES } from '../data/units.js';
 import { hireCostOf, itemValue, slotOf, equipItem } from './company.js';
+import { CAPTAIN_NODES, nodeAvailable, pointsFromRenown } from '../data/captainTree.js';
 
 /** Backgrounds that turn up looking for work, roughly worst to best. */
 const RECRUIT_POOL = ['daytaler', 'farmhand', 'militia', 'brawler', 'poacher', 'sellsword', 'hedgeKnight'];
@@ -243,6 +244,7 @@ export class Campaign {
         band.camp.cooldown = CAMP_RESPAWN_DAYS * HOURS_PER_DAY;
         this.onCampCleared(band.camp);
       }
+      this.gainRenown(band.roster.length * 4, false);
       this.note(`${band.name} 을(를) 물리쳤다.`, 'victory');
     } else {
       // Survivors scatter back the way they came rather than being wiped out.
@@ -277,7 +279,8 @@ export class Campaign {
     if (this.party.moving) return;
     const s = this.settlementAt(this.party.hex);
     if (!s) return;
-    const rate = SETTLEMENTS[s.tier].size;   // village 1, town 2, city 3
+    const rate = SETTLEMENTS[s.tier].size    // village 1, town 2, city 3
+      * (this.company.captainPerks.has('surgeon') ? 2 : 1);
     for (const u of this.roster) {
       if (!u.alive) continue;
       u.hp = Math.min(u.hpMax, u.hp + hours * rate * 0.25);
@@ -365,12 +368,17 @@ export class Campaign {
   }
 
   buy(itemId, settlement) {
-    const price = itemValue(itemId);
+    const price = this.priceOf(itemId);
     if (!this.company.canAfford(price)) return { ok: false, reason: 'crowns', price };
     this.company.spend(price);
     this.company.stashItem(itemId);
     settlement.stock = settlement.stock.filter((id) => id !== itemId);
     return { ok: true, price };
+  }
+
+  /** What a shop actually charges, after the captain's haggling. */
+  priceOf(itemId) {
+    return Math.round(itemValue(itemId) * (this.company.captainPerks.has('haggler') ? 0.85 : 1));
   }
 
   /** Move a stashed item onto a brother; anything it displaces goes back in. */
@@ -434,9 +442,42 @@ export class Campaign {
   completeContract(c) {
     c.state = 'done';
     this.contracts = this.contracts.filter((x) => x !== c);
-    this.company.earn(c.reward);
-    this.note(`계약 완료 — ${c.title}. ${c.reward} 크라운을 받았다.`, 'reward');
+    const pay = Math.round(c.reward * (this.company.captainPerks.has('negotiator') ? 1.2 : 1));
+    this.company.earn(pay);
+    this.gainRenown(Math.round(c.reward / 10));
+    this.note(`계약 완료 — ${c.title}. ${pay} 크라운을 받았다.`, 'reward');
     this.bus.emit('contract:done', { contract: c });
+  }
+
+  // ---------------------------------------------------------------- captain
+  /** Renown buys points on the captain's tree. */
+  gainRenown(amount, announce = true) {
+    if (amount <= 0) return;
+    const before = this.captainPoints;
+    this.company.renown += amount;
+    const after = this.captainPoints;
+    if (after > before) {
+      this.note(`용병단의 이름이 알려졌다. 단장 특성 점수 ${after - before} 점을 얻었다.`, 'renown');
+      this.bus.emit('captain:point', { points: after });
+    } else if (announce) {
+      this.bus.emit('renown', { renown: this.company.renown });
+    }
+  }
+
+  /** Unspent captain points. */
+  get captainPoints() {
+    return pointsFromRenown(this.company.renown) - this.company.captainSpent;
+  }
+
+  takeCaptainNode(id) {
+    if (!CAPTAIN_NODES[id]) return false;
+    if (this.captainPoints < 1) return false;
+    if (!nodeAvailable(id, this.company.captainPerks)) return false;
+    this.company.captainPerks.add(id);
+    this.company.captainSpent++;
+    this.note(`단장 특성 — ${CAPTAIN_NODES[id].name} 을(를) 익혔다.`, 'renown');
+    this.bus.emit('captain:change', { id });
+    return true;
   }
 
   expireContracts() {

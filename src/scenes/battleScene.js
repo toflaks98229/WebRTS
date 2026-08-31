@@ -18,21 +18,28 @@ const AI_STEP_DELAY = 380;   // ms between AI actions, so the player can follow 
  * after-action report.
  */
 export class BattleScene {
-  constructor(app, { roster, enemies, biome = 'plains', onFinish, title = '전투' }) {
+  /**
+   * Pass `battle` to fight on a board that is already laid out (the lab does
+   * this); otherwise a fresh one is generated and both sides are deployed.
+   */
+  constructor(app, { roster, enemies, biome = 'plains', onFinish, battle = null }) {
     this.app = app;
     this.canvas = app.canvas;
     this.hud = app.battleHud;
     this.roster = roster;
     this.onFinish = onFinish;
-    this.title = title;
 
     this.layout = new Layout(42);
     this.camera = new Camera();
     this.effects = new Effects();
 
-    this.battle = new Battle({ cols: 15, rows: 9, seed: app.rng.int(0, 1e9), biome });
-    this.battle.deploy(roster, 0, 2);
-    this.battle.deploy(enemies, this.battle.grid.cols - 3, this.battle.grid.cols - 1);
+    if (battle) {
+      this.battle = battle;
+    } else {
+      this.battle = new Battle({ cols: 15, rows: 9, seed: app.rng.int(0, 1e9), biome });
+      this.battle.deploy(roster, 0, 2);
+      this.battle.deploy(enemies, this.battle.grid.cols - 3, this.battle.grid.cols - 1);
+    }
 
     this.renderer = new Renderer(this.canvas, this.battle, this.layout, this.camera, this.effects);
     this.renderer.sprites = app.spriteBank || null;
@@ -121,6 +128,7 @@ export class BattleScene {
     const survivors = this.roster.filter((u) => u.alive);
     const fallen = this.roster.filter((u) => !u.alive);
     const rule = '<hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">';
+    const ups = this.battle.levelUps || [];
     const rows = survivors.map((u) =>
       `<div class="gear-row"><i>${esc(u.name)}</i><em>체력 ${Math.max(0, Math.round(u.hp))}/${u.hpMax} · 처치 ${u.kills}</em></div>`).join('');
 
@@ -133,6 +141,8 @@ export class BattleScene {
         ${fallen.map((u) => `<div class="gear-row"><i>${esc(u.name)}</i><em>${esc(u.title)}</em></div>`).join('')}` : ''}
       ${this.loot?.length ? `${rule}<b style="color:#c8a24a">현장에서 갖춘 장비</b>
         ${this.loot.map((c) => `<div class="gear-row"><i>${esc(c.unit.name)}</i><em>${esc(c.from)} → ${esc(c.to)}</em></div>`).join('')}` : ''}
+      ${ups.length ? `${rule}<b style="color:#7fb069">레벨 상승</b>
+        ${ups.map((l) => `<div class="gear-row"><i>${esc(l.unit.name)}</i><em>${l.unit.level} 레벨 · 특성 점수 ${l.unit.perkPoints}</em></div>`).join('')}` : ''}
       ${this.leftovers?.length ? `${rule}<b style="color:#c8a24a">창고로 보낸 노획품 ${this.leftovers.length}점</b>
         <div class="gear-row"><i>마을 상점에서 팔거나 다른 단원에게 넘길 수 있다.</i></div>` : ''}`,
       () => this.onFinish?.(result, { loot: this.loot, leftovers: this.leftovers }),

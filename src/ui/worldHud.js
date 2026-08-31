@@ -2,6 +2,7 @@ import { overlay, esc, pct } from './overlay.js';
 import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
 import { bandStrengthLabel } from '../campaign/bands.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
+import { xpProgress } from '../data/perks.js';
 import { HOURS_PER_DAY } from '../campaign/campaign.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -54,6 +55,7 @@ export class WorldHud {
 
     const alive = c.company.alive;
     const wounded = alive.filter((u) => u.hp < u.hpMax).length;
+    const points = alive.reduce((s, u) => s + u.perkPoints, 0) + c.captainPoints;
     const here = c.settlementAt(c.party.hex);
     this.el.status.innerHTML = `
       <span class="purse"><b>${c.company.crowns}</b> 크라운</span>
@@ -61,6 +63,7 @@ export class WorldHud {
       `단원 <b>${alive.length}</b>명`,
       `일당 <b>${c.company.dailyWage}</b>`,
       wounded ? `부상 <b>${wounded}</b>명` : null,
+      points ? `<b style="color:#7fb069">특성 ${points}점</b>` : null,
       c.party.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
     ].filter(Boolean).join(' · ');
 
@@ -75,21 +78,28 @@ export class WorldHud {
     const rows = c.roster.map((u) => {
       const hp = pct(u.hp, u.hpMax);
       const arm = u.armorMax ? pct(u.armorTotal, u.armorMax) : 0;
-      return `<div class="roster-row ${u.alive ? '' : 'dead'}" data-uid="${u.id}">
+      const xp = xpProgress(u);
+      return `<div class="roster-row ${u.alive ? '' : 'dead'}" data-uid="${u.id}" title="눌러서 특성 창 열기">
         <div>
-          <div class="rn">${esc(u.name)}</div>
-          <div class="rt">${esc(u.title)} · ${esc(u.weapon?.name || '맨손')}</div>
+          <div class="rn">${u.isCaptain ? '<span class="cp-cap">단장</span> ' : ''}${esc(u.name)}
+            ${u.perkPoints ? `<span class="cp-pts">+${u.perkPoints}</span>` : ''}</div>
+          <div class="rt">${u.level}레벨 · ${esc(u.title)} · ${esc(u.weapon?.name || '맨손')}</div>
         </div>
         <div>
           <div class="mini-bar"><div style="width:${hp}%;background:linear-gradient(#7cc063,#4b7a3a)"></div></div>
           <div class="mini-bar"><div style="width:${arm}%;background:linear-gradient(#b3bcc4,#6d757c)"></div></div>
+          <div class="mini-bar"><div style="width:${xp ? pct(xp.have, xp.need) : 100}%;background:linear-gradient(#c8a24a,#7d6531)"></div></div>
         </div>
       </div>`;
     }).join('');
 
     this.el.card.innerHTML = `
-      <div class="cc-head">용병단 <small>${c.roster.filter((u) => u.alive).length}명</small></div>
+      <div class="cc-head">용병단 <small>${c.company.size}명</small></div>
       ${rows}`;
+
+    this.el.card.querySelectorAll('.roster-row').forEach((row) => {
+      row.addEventListener('click', () => this.scene?.openRoster(Number(row.dataset.uid)));
+    });
   }
 
   renderActions() {
@@ -106,6 +116,8 @@ export class WorldHud {
         <span class="cd">${status} · ${k.reward} 크라운</span>
       </div>`);
     }
+
+    chips.push('<button class="btn" data-act="roster">단원</button>');
 
     if (site) {
       const tier = SETTLEMENTS[site.tier];

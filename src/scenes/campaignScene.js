@@ -4,6 +4,7 @@ import { WorldRenderer } from '../render/worldRenderer.js';
 import { HOUR_SECONDS, HOURS_PER_DAY } from '../campaign/campaign.js';
 import { overlay } from '../ui/overlay.js';
 import { SettlementPanel } from '../ui/settlementPanel.js';
+import { CharacterPanel } from '../ui/characterPanel.js';
 
 const SPEEDS = [0, 1, 3];
 
@@ -48,7 +49,19 @@ export class CampaignScene {
     this.hud.setSpeedButtons(this.speed);
   }
 
+  /** Open the roster screen, optionally focused on one brother. */
+  openRoster(unitId = null) {
+    const resume = this.speed;
+    this.setSpeed(0);
+    new CharacterPanel(this.campaign, {
+      unit: unitId ? this.campaign.company.alive.find((u) => u.id === unitId) : null,
+      onChange: () => this.hud.refresh(),
+      onClose: () => { this.setSpeed(resume); this.hud.refresh(); },
+    }).open();
+  }
+
   action(id) {
+    if (id === 'roster') { this.openRoster(); return; }
     if (id === 'town') {
       const site = this.campaign.settlementAt(this.campaign.party.hex);
       if (!site) return;
@@ -152,6 +165,7 @@ export class CampaignScene {
     else if (e.key === '1') this.setSpeed(1);
     else if (e.key === '2') this.setSpeed(3);
     else if (e.key === 'Tab') { e.preventDefault(); this.centerOnCompany(1); }
+    else if (e.key.toLowerCase() === 'c') this.openRoster();
     else if (e.key === 'Escape') this.campaign.party.stop();
   }
 

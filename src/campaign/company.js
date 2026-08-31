@@ -28,11 +28,28 @@ export class Company {
     this.crowns = crowns;
     this.stash = [];          // loose item ids, sellable at a settlement
     this.debtDays = 0;        // consecutive days wages went unpaid
+    this.renown = 0;          // feeds the captain's tree
+    this.captainPerks = new Set();
+    this.captainSpent = 0;
   }
 
   get alive() { return this.roster.filter((u) => u.alive); }
   get size() { return this.alive.length; }
-  get dailyWage() { return this.alive.reduce((s, u) => s + wageOf(u), 0); }
+  get dailyWage() {
+    const base = this.alive.reduce((s, u) => s + wageOf(u), 0);
+    return Math.round(base * (this.captainPerks.has('quartermaster') ? 0.8 : 1));
+  }
+
+  get captain() { return this.roster.find((u) => u.isCaptain && u.alive) || null; }
+
+  /** Promote the most blooded survivor when the captain falls. */
+  ensureCaptain() {
+    if (this.captain) return null;
+    const next = this.alive.slice().sort((a, b) => (b.level - a.level) || (b.kills - a.kills))[0];
+    if (!next) return null;
+    next.isCaptain = true;
+    return next;
+  }
 
   canAfford(cost) { return this.crowns >= cost; }
   spend(cost) { if (!this.canAfford(cost)) return false; this.crowns -= cost; return true; }
@@ -49,14 +66,16 @@ export class Company {
 
   // ---------------------------------------------------------------- stash
   stashItem(id) { if (id) this.stash.push(id); }
-  stashValue() { return this.stash.reduce((s, id) => s + (itemValue(id) * SELL_RATE), 0); }
+  stashValue() { return this.stash.reduce((s, id) => s + (itemValue(id) * this.sellRate), 0); }
 
   /** Sell one stashed item; returns the crowns gained, or 0 if not held. */
+  get sellRate() { return SELL_RATE * (this.captainPerks.has('haggler') ? 1.15 : 1); }
+
   sellFromStash(index) {
     const id = this.stash[index];
     if (!id) return 0;
     this.stash.splice(index, 1);
-    const gain = Math.round(itemValue(id) * SELL_RATE);
+    const gain = Math.round(itemValue(id) * this.sellRate);
     this.earn(gain);
     return gain;
   }

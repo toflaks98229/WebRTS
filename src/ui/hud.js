@@ -1,4 +1,4 @@
-import { MORALE, MAX_AP } from '../battle/unit.js';
+import { MORALE } from '../battle/unit.js';
 import { overlay, esc, pct } from './overlay.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -97,8 +97,8 @@ export class HUD {
       ${arm(u.body, 'f-arm')}${arm(u.head, 'f-armh')}
 
       <div class="meter">
-        <div class="meter-top"><span>행동력</span><b>${u.ap} / ${MAX_AP}</b></div>
-        <div class="ap-pips">${Array.from({ length: MAX_AP }, (_, i) =>
+        <div class="meter-top"><span>행동력</span><b>${u.ap} / ${u.maxAP}</b></div>
+        <div class="ap-pips">${Array.from({ length: u.maxAP }, (_, i) =>
           `<div class="ap-pip ${i < u.ap ? 'on' : ''}"></div>`).join('')}</div>
       </div>
 
@@ -127,8 +127,8 @@ export class HUD {
 
     this.el.resource.innerHTML = u ? `
       <div class="meter">
-        <div class="meter-top"><span>행동력</span><b>${u.ap} / ${MAX_AP}</b></div>
-        <div class="meter-bar"><div class="meter-fill f-ap" style="width:${pct(u.ap, MAX_AP)}%"></div></div>
+        <div class="meter-top"><span>행동력</span><b>${u.ap} / ${u.maxAP}</b></div>
+        <div class="meter-bar"><div class="meter-fill f-ap" style="width:${pct(u.ap, u.maxAP)}%"></div></div>
       </div>
       <div class="meter">
         <div class="meter-top"><span>피로도</span><b>${u.fatigue} / ${u.fatigueMax}</b></div>
