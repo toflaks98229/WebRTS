@@ -6,13 +6,14 @@
  * probing the candidate URL shapes it uses, and pull only those PNGs (~1 MB).
  *
  * Usage:  node tools/fetch-lpc.mjs
- * Output: assets/lpc/**.png  +  assets/lpc/manifest.json
+ * Output: assets/lpc/**.png, assets/lpc/manifest.json, assets/lpc/ATTRIBUTION.md
  *
  * Art is CC-BY-SA 3.0 / GPL-3.0 - see CREDITS.md.
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { attribution } from './lpc-attribution.mjs';
 
 const REPO = 'LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator';
 const BRANCH = 'master';
@@ -88,9 +89,16 @@ const enc = (p) => p.split('/').map(encodeURIComponent).join('/');
 
 async function head(url) {
   if (cache.has(url)) return cache.get(url);
-  const r = await fetch(url, { method: 'HEAD' });
-  cache.set(url, r.ok);
-  return r.ok;
+  // A dropped request would silently delete a layer from the manifest, so only
+  // a real 404 counts as "absent"; anything else is retried.
+  for (let i = 0; i < 4; i++) {
+    try {
+      const r = await fetch(url, { method: 'HEAD' });
+      if (r.ok || r.status === 404) { cache.set(url, r.ok); return r.ok; }
+    } catch { /* retry */ }
+    await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+  }
+  throw new Error(`could not probe ${url}`);
 }
 
 /** Not every item ships a male sheet; fall back through the other body types. */
@@ -143,6 +151,18 @@ async function resolveFile(base, anim, variants) {
   return null;
 }
 
+/** GitHub occasionally hiccups on raw fetches; retry rather than lose the run. */
+async function getJSON(url, tries = 4) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) return await r.json();
+    } catch { /* fall through to retry */ }
+    await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  }
+  throw new Error(`could not read ${url}`);
+}
+
 async function download(rel) {
   const dest = path.join(OUT, rel);
   await fs.mkdir(path.dirname(dest), { recursive: true });
@@ -160,55 +180,78 @@ async function download(rel) {
 // ---------------------------------------------------------------- main
 async function main() {
   console.log('resolving sheet definitions...');
-  const tree = await (await fetch(
-    `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`)).json();
+  const tree = await getJSON(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
   if (!tree.tree) throw new Error('could not read repo tree (rate limited?)');
   const defPaths = tree.tree
     .filter((t) => t.type === 'blob' && t.path.startsWith('sheet_definitions/') && t.path.endsWith('.json'))
     .map((t) => t.path.replace('sheet_definitions/', ''));
 
   const manifest = { source: `https://github.com/${REPO}`, license: 'CC-BY-SA 3.0 / GPL-3.0', items: {} };
+  const failed = [];
   let bytes = 0;
   let files = 0;
 
   for (const [gameId, defName] of Object.entries(WANT)) {
     const defPath = defPaths.find((p) => p.endsWith(`/${defName}.json`) || p === `${defName}.json`);
-    if (!defPath) { console.warn(`  ! no definition for ${gameId} (${defName})`); continue; }
+    if (!defPath) { failed.push(`${gameId}: no definition named ${defName}`); continue; }
 
-    const def = await (await fetch(DEFS + defPath)).json();
+    let def;
+    try {
+      def = await getJSON(DEFS + defPath);
+    } catch (e) {
+      failed.push(`${gameId}: ${e.message}`);
+      continue;
+    }
     const variants = (def.variants || []).length
       ? [...VARIANTS.filter((v) => def.variants.includes(v)), ...def.variants]
       : [];
 
     const layers = [];
-    for (const key of Object.keys(def).filter((k) => k.startsWith('layer_'))) {
-      const L = def[key];
-      const base = layerBase(L);
-      if (!base) continue;
+    try {
+      for (const key of Object.keys(def).filter((k) => k.startsWith('layer_'))) {
+        const L = def[key];
+        const base = layerBase(L);
+        if (!base) continue;
 
-      const frames = {};
-      const allowed = animsFor(base);
-      // A custom animation only counts for layers we actually render a pose for.
-      const anims = (L.custom_animation && allowed.length) ? [...allowed, L.custom_animation] : allowed;
-      for (const anim of anims) {
-        const rel = await resolveFile(base, anim, variants);
-        if (!rel) continue;
-        const n = await download(rel);
-        if (!n) continue;
-        bytes += n; files++;
-        frames[anim === L.custom_animation ? 'slash' : anim] = rel;
+        const frames = {};
+        const allowed = animsFor(base);
+        // A custom animation only counts for layers we actually render a pose for.
+        const anims = (L.custom_animation && allowed.length) ? [...allowed, L.custom_animation] : allowed;
+        for (const anim of anims) {
+          const rel = await resolveFile(base, anim, variants);
+          if (!rel) continue;
+          const n = await download(rel);
+          if (!n) continue;
+          bytes += n; files++;
+          frames[anim === L.custom_animation ? 'slash' : anim] = rel;
+        }
+        if (Object.keys(frames).length) layers.push({ z: L.zPos ?? 50, frames });
       }
-      if (Object.keys(frames).length) layers.push({ z: L.zPos ?? 50, frames });
-    }
 
-    if (!layers.length) { console.warn(`  ! no files resolved for ${gameId}`); continue; }
+    } catch (e) {
+      failed.push(`${gameId}: ${e.message}`);
+      continue;
+    }
+    if (!layers.length) { failed.push(`${gameId}: no files resolved`); continue; }
     layers.sort((a, b) => a.z - b.z);
-    manifest.items[gameId] = { name: def.name, def: defName, layers };
+    // CC-BY-SA obliges us to name the artists, so carry the credits through.
+    manifest.items[gameId] = { name: def.name, def: defName, credits: def.credits || [], layers };
     console.log(`  ${gameId.padEnd(14)} ${def.name} - ${layers.length} layer(s), ${layers.reduce((s, l) => s + Object.keys(l.frames).length, 0)} sheets`);
+  }
+
+  if (failed.length) {
+    // A partial manifest silently strips gear out of the game, so keep the
+    // previous one on disk and make the failure loud.
+    console.error(`
+manifest NOT written - ${failed.length} item(s) failed:`);
+    failed.forEach((f) => console.error(`  ${f}`));
+    process.exitCode = 1;
+    return;
   }
 
   await fs.mkdir(OUT, { recursive: true });
   await fs.writeFile(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  await fs.writeFile(path.join(OUT, 'ATTRIBUTION.md'), attribution(manifest));
   console.log(`\n${files} files, ${(bytes / 1024).toFixed(0)} KB -> ${OUT}`);
 }
 

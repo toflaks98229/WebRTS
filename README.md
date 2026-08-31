@@ -69,5 +69,11 @@ Node 에서 그대로 시뮬레이션을 돌릴 수 있습니다. 밸런싱은 �
 
 ## 라이선스
 
-캐릭터 아트는 카피레프트(GPL-3.0 / CC-BY-SA 3.0)입니다.
-배포 전에 [CREDITS.md](CREDITS.md) 를 반드시 확인하세요.
+| 대상 | 라이선스 |
+| --- | --- |
+| 코드 | GPL-3.0-or-later — [LICENSE](LICENSE) |
+| 아트 (`assets/`) | 파일마다 상이 — [assets/lpc/ATTRIBUTION.md](assets/lpc/ATTRIBUTION.md) |
+
+번들된 LPC 아트는 CC0 · CC-BY · CC-BY-SA · OGA-BY · GPL 이 섞여 있고, 일부는
+CC-BY-SA 3.0 단독이라 GPL 로 덮을 수 없습니다. 재배포 시 조건은
+[CREDITS.md](CREDITS.md) 를 확인하세요.
