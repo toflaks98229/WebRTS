@@ -1,12 +1,13 @@
 import { MORALE, MAX_AP } from '../battle/unit.js';
+import { overlay, esc, pct } from './overlay.js';
 
 const $ = (sel) => document.querySelector(sel);
 
 /** All DOM-side UI: unit card, action bar, turn order, log, tooltips. */
 export class HUD {
-  constructor(battle, game) {
-    this.battle = battle;
-    this.game = game;
+  constructor() {
+    this.battle = null;
+    this.game = null;
 
     this.el = {
       round: $('#round-num'),
@@ -15,27 +16,20 @@ export class HUD {
       log: $('#log'),
       skills: $('#skills'),
       resource: $('#ap-fatigue'),
-      tip: $('#hover-tip'),
-      banner: $('#banner'),
-      modal: $('#modal'),
-      modalTitle: $('#modal-title'),
-      modalBody: $('#modal-body'),
     };
 
-    $('#btn-end').addEventListener('click', () => this.game.endTurn());
-    $('#btn-wait').addEventListener('click', () => this.game.wait());
-    $('#btn-help').addEventListener('click', () => this.showHelp());
-    $('#btn-newbattle').addEventListener('click', () => this.game.newBattle());
-    $('#modal-ok').addEventListener('click', () => this.el.modal.classList.add('hidden'));
+    $('#btn-end').addEventListener('click', () => this.game?.endTurn());
+    $('#btn-wait').addEventListener('click', () => this.game?.wait());
 
-    this.attach(battle);
   }
 
-  /** Point the HUD at a new Battle instance (used when a fresh fight starts). */
-  attach(battle) {
+  /** Point the HUD at the battle and scene that are currently live. */
+  attach(battle, scene) {
     this.battle = battle;
+    this.game = scene;
     this.clearLog();
-    battle.bus.on('log', (e) => this.appendLog(e));
+    this.unsubscribe?.();
+    this.unsubscribe = battle.bus.on('log', (e) => this.appendLog(e));
     for (const line of battle.logLines) this.appendLog(line);
   }
 
@@ -207,22 +201,9 @@ export class HUD {
       ${def.cover ? `<div class="row"><span>엄폐</span><b class="pos">+${def.cover}</b></div>` : ''}`, sx, sy);
   }
 
-  tipHTML(html, x, y, above = false) {
-    const t = this.el.tip;
-    t.innerHTML = html;
-    t.classList.remove('hidden');
-    const stage = document.getElementById('stage').getBoundingClientRect();
-    const r = t.getBoundingClientRect();
-    let px = x - stage.left + 16;
-    let py = y - stage.top + 16;
-    if (above) py = y - stage.top - r.height - 4;
-    px = Math.min(px, stage.width - r.width - 8);
-    py = Math.max(4, Math.min(py, stage.height - r.height - 8));
-    t.style.left = `${px}px`;
-    t.style.top = `${py}px`;
-  }
+  tipHTML(html, x, y, above = false) { overlay.tip(html, x, y, above); }
 
-  hideTip() { this.el.tip.classList.add('hidden'); }
+  hideTip() { overlay.hideTip(); }
 
   // ------------------------------------------------------------- misc
   appendLog(e) {
@@ -236,19 +217,9 @@ export class HUD {
 
   clearLog() { this.el.log.innerHTML = ''; }
 
-  showBanner(text, ms = 1400) {
-    const b = this.el.banner;
-    b.textContent = text;
-    b.classList.remove('hidden');
-    clearTimeout(this._bannerTimer);
-    this._bannerTimer = setTimeout(() => b.classList.add('hidden'), ms);
-  }
+  showBanner(text, ms = 1400) { overlay.banner(text, ms); }
 
-  modal(title, bodyHTML) {
-    this.el.modalTitle.textContent = title;
-    this.el.modalBody.innerHTML = bodyHTML;
-    this.el.modal.classList.remove('hidden');
-  }
+  modal(title, bodyHTML, onOk = null, okLabel = '확인') { overlay.modal(title, bodyHTML, onOk, okLabel); }
 
   showHelp() {
     this.modal('조작법', `
@@ -274,10 +245,6 @@ export class HUD {
   }
 }
 
-function pct(v, max) { return Math.max(0, Math.min(100, (v / max) * 100)); }
 function gearRow(label, value) {
   return `<div class="gear-row"><i>${label}</i><em>${esc(String(value))}</em></div>`;
-}
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }

@@ -1,11 +1,12 @@
 // Zero-dependency static server. ES modules need http://, so opening
 // index.html straight from the filesystem will not work.
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.argv[2]) || 5173;
-const ROOT = __dirname;
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js':   'text/javascript; charset=utf-8',

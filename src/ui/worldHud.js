@@ -1,0 +1,170 @@
+import { overlay, esc, pct } from './overlay.js';
+import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
+import { bandStrengthLabel } from '../campaign/bands.js';
+import { HOURS_PER_DAY } from '../campaign/campaign.js';
+
+const $ = (sel) => document.querySelector(sel);
+
+/** DOM side of the campaign map: date, speed, company roster, journal, tooltips. */
+export class WorldHud {
+  constructor() {
+    this.campaign = null;
+    this.scene = null;
+    this.el = {
+      day: $('#day-num'),
+      clock: $('#clock'),
+      status: $('#world-status'),
+      card: $('#company-card'),
+      log: $('#world-log'),
+      hint: $('#world-hint'),
+      actions: $('#world-actions'),
+      speed: $('#speed-controls'),
+    };
+
+    this.el.speed.querySelectorAll('.seg-btn').forEach((b) => {
+      b.addEventListener('click', () => this.scene?.setSpeed(Number(b.dataset.speed)));
+    });
+  }
+
+  attach(campaign, scene) {
+    this.campaign = campaign;
+    this.scene = scene;
+    this.el.log.innerHTML = '';
+    // The campaign bus outlives every trip to a battle, so drop the previous
+    // subscription or the journal doubles up each time we come back.
+    this.unsubscribe?.();
+    this.unsubscribe = campaign.bus.on('log', (e) => this.appendLog(e));
+    for (const line of campaign.log) this.appendLog(line);
+  }
+
+  setSpeedButtons(speed) {
+    this.el.speed.querySelectorAll('.seg-btn').forEach((b) => {
+      b.classList.toggle('active', Number(b.dataset.speed) === speed);
+    });
+  }
+
+  // ------------------------------------------------------------- refresh
+  refresh() {
+    const c = this.campaign;
+    this.el.day.textContent = c.day;
+    const h = String(c.hourOfDay).padStart(2, '0');
+    const m = String(Math.floor((c.time % 1) * 60)).padStart(2, '0');
+    this.el.clock.textContent = `${h}:${m}`;
+
+    const alive = c.roster.filter((u) => u.alive);
+    const wounded = alive.filter((u) => u.hp < u.hpMax).length;
+    const here = c.settlementAt(c.company.hex);
+    this.el.status.innerHTML = [
+      `단원 <b>${alive.length}</b>명`,
+      wounded ? `부상 <b>${wounded}</b>명` : null,
+      c.company.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
+    ].filter(Boolean).join(' · ');
+
+    this.renderRoster();
+    this.renderActions();
+  }
+
+  renderRoster() {
+    const c = this.campaign;
+    if (!c.roster.length) { this.el.card.innerHTML = '<div class="cc-empty">단원이 없습니다</div>'; return; }
+
+    const rows = c.roster.map((u) => {
+      const hp = pct(u.hp, u.hpMax);
+      const arm = u.armorMax ? pct(u.armorTotal, u.armorMax) : 0;
+      return `<div class="roster-row ${u.alive ? '' : 'dead'}" data-uid="${u.id}">
+        <div>
+          <div class="rn">${esc(u.name)}</div>
+          <div class="rt">${esc(u.title)} · ${esc(u.weapon?.name || '맨손')}</div>
+        </div>
+        <div>
+          <div class="mini-bar"><div style="width:${hp}%;background:linear-gradient(#7cc063,#4b7a3a)"></div></div>
+          <div class="mini-bar"><div style="width:${arm}%;background:linear-gradient(#b3bcc4,#6d757c)"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    this.el.card.innerHTML = `
+      <div class="cc-head">용병단 <small>${c.roster.filter((u) => u.alive).length}명</small></div>
+      ${rows}`;
+  }
+
+  renderActions() {
+    const c = this.campaign;
+    const site = c.settlementAt(c.company.hex);
+    const chips = [];
+
+    if (site) {
+      const tier = SETTLEMENTS[site.tier];
+      chips.push(`<div class="site-chip"><span class="sn">${esc(site.name)}</span><span class="st">${tier.name}</span></div>`);
+      chips.push('<button class="btn" data-act="rest">하루 휴식</button>');
+    }
+    this.el.actions.innerHTML = chips.join('');
+    this.el.actions.querySelectorAll('[data-act]').forEach((b) => {
+      b.addEventListener('click', () => this.scene?.action(b.dataset.act));
+    });
+
+    this.el.hint.innerHTML = c.company.moving
+      ? '이동 중 — <b>클릭</b>으로 목적지 변경, <b>정지</b> 버튼으로 멈춤'
+      : site
+        ? '<b>클릭</b>으로 이동. 적 무리 위를 클릭하면 추격한다.'
+        : '<b>클릭</b>으로 이동. 마을에 머물면 부상과 장비가 회복된다.';
+  }
+
+  // ------------------------------------------------------------- tooltips
+  showTileTip(tile, x, y) {
+    const c = this.campaign;
+    const def = worldTerrain(tile.terrain);
+    const band = c.bands.find((b) => b.alive && b.hex.q === tile.hex.q && b.hex.r === tile.hex.r);
+    const route = c.previewRoute(tile.hex);
+
+    const head = tile.settlement
+      ? `<h4>${esc(tile.settlement.name)}</h4><div class="row"><span>규모</span><b>${SETTLEMENTS[tile.settlement.tier].name}</b></div>`
+      : band
+        ? `<h4>${esc(band.name)}</h4><div class="row"><span>병력</span><b>${band.roster.length}명 (${bandStrengthLabel(band.roster.length)})</b></div>`
+        : `<h4>${def.name}</h4>`;
+
+    const body = [
+      `<div class="row"><span>지형</span><b>${def.name}${tile.road ? ' · 길' : ''}</b></div>`,
+      def.passable ? `<div class="row"><span>통행</span><b>${(def.travel * (tile.road ? 0.5 : 1)).toFixed(1)}시간</b></div>`
+        : '<div class="row"><span>통행</span><b>불가</b></div>',
+      tile.camp ? '<div class="row"><span>지점</span><b>산적 야영지</b></div>' : '',
+      route ? `<hr><div class="row"><span>이동 시간</span><b>${formatHours(route.hours)}</b></div>` : '',
+    ].join('');
+
+    overlay.tip(head + body, x, y);
+  }
+
+  hideTip() { overlay.hideTip(); }
+
+  appendLog(e) {
+    const div = document.createElement('div');
+    div.className = e.kind;
+    div.textContent = `${e.day}일차 · ${e.text}`;
+    this.el.log.appendChild(div);
+    this.el.log.scrollTop = this.el.log.scrollHeight;
+    while (this.el.log.childElementCount > 200) this.el.log.removeChild(this.el.log.firstChild);
+  }
+
+  showHelp() {
+    overlay.modal('캠페인 지도', `
+      <ul>
+        <li><b>좌클릭</b> — 그 지점으로 행군. 적 무리를 클릭하면 추격한다.</li>
+        <li><b>우클릭 드래그</b> / 방향키 — 지도 이동, <b>휠</b> — 확대·축소</li>
+        <li><b>Space</b> — 일시정지, <b>1 / 2</b> — 보통 / 빠름</li>
+      </ul>
+      <hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">
+      <ul>
+        <li>적 무리와 같은 칸에 서면 <b>전투</b>가 시작된다. 전투는 헥스 전술 화면으로 전환된다.</li>
+        <li>적 무리는 <b>4칸</b> 안에 들어오면 추격해 온다. 길 위에서는 이동이 두 배 빠르다.</li>
+        <li><b>마을에 머물면</b> 시간이 갈수록 부상과 장비가 회복된다.</li>
+        <li>야영지의 무리를 없애도 며칠 뒤 다시 채워진다.</li>
+        <li>쓰러진 단원은 돌아오지 않는다. 승리하면 적의 장비를 노획한다.</li>
+      </ul>`);
+  }
+}
+
+export function formatHours(h) {
+  if (h < 1) return `${Math.round(h * 60)}분`;
+  if (h < HOURS_PER_DAY) return `${h.toFixed(1)}시간`;
+  return `${Math.floor(h / HOURS_PER_DAY)}일 ${Math.round(h % HOURS_PER_DAY)}시간`;
+}

@@ -233,3 +233,58 @@ kbd {
 ::-webkit-scrollbar-track { background: #0f0d0b; }
 ::-webkit-scrollbar-thumb { background: #362e25; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #4b4033; }
+
+/* ═════════════════════════ scene switching ═════════════════════════ */
+.mode-battle   .campaign-only { display: none !important; }
+.mode-campaign .battle-only   { display: none !important; }
+.grow { flex: 1; min-width: 0; }
+
+/* ── campaign top bar ── */
+#date-info { color: var(--muted); font-size: 13px; white-space: nowrap; }
+#date-info b { color: var(--text); font-size: 16px; }
+.clock {
+  margin-left: 10px; font-variant-numeric: tabular-nums;
+  color: #a99c82; border: 1px solid var(--edge); border-radius: 3px; padding: 1px 7px;
+}
+.seg { display: flex; gap: 0; border: 1px solid var(--edge-hi); border-radius: 3px; overflow: hidden; }
+.seg-btn {
+  font-family: var(--serif); font-size: 12px; color: var(--muted);
+  background: #1a1613; border: 0; border-right: 1px solid var(--edge);
+  padding: 5px 11px; cursor: pointer; transition: background .12s, color .12s;
+}
+.seg-btn:last-child { border-right: 0; }
+.seg-btn:hover { background: #2a231b; color: var(--text); }
+.seg-btn.active { background: #3d3320; color: #f0dfae; }
+#world-status { font-size: 12px; color: var(--muted); }
+#world-status b { color: #d9c48b; font-weight: 600; }
+
+/* ── company panel ── */
+.company-card { padding: 10px 12px; overflow-y: auto; }
+.cc-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--display); font-size: 15px; color: #eadfc0; margin-bottom: 8px;
+}
+.cc-head small { font-family: var(--serif); font-size: 11px; color: var(--muted); }
+.roster-row {
+  display: grid; grid-template-columns: 1fr 54px; gap: 6px; align-items: center;
+  padding: 5px 6px; border: 1px solid transparent; border-radius: 3px;
+  border-bottom: 1px solid #241f19;
+}
+.roster-row:hover { background: #221d17; border-color: var(--edge); }
+.roster-row .rn { font-size: 12px; color: #d3c8b1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roster-row .rt { font-size: 10px; color: var(--muted); }
+.roster-row.dead .rn { color: #7a6f63; text-decoration: line-through; }
+.mini-bar { height: 5px; background: #0f0d0b; border: 1px solid var(--edge); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+.mini-bar > div { height: 100%; }
+.cc-empty { color: var(--muted); font-style: italic; text-align: center; padding: 20px 0; }
+
+/* ── campaign action bar ── */
+.world-hint { flex: 1; font-size: 13px; color: var(--muted); font-style: italic; }
+.world-hint b { color: #d9c48b; font-style: normal; }
+.world-actions { display: flex; gap: 8px; align-items: center; }
+.site-chip {
+  display: flex; flex-direction: column; gap: 2px; padding: 6px 12px;
+  border: 1px solid var(--edge-hi); border-radius: 3px; background: linear-gradient(#2a241d, #191512);
+}
+.site-chip .sn { font-family: var(--display); font-size: 13px; color: #eadfc0; }
+.site-chip .st { font-size: 11px; color: var(--muted); }

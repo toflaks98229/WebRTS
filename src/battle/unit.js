@@ -139,8 +139,28 @@ export class Unit {
     if (sk.effect === 'reload') this.loaded = true;
   }
 
-  /** Patch a survivor back up between battles (armour repaired, wounds tended). */
+  /**
+   * Clear per-battle state without touching wounds. Used when a campaign fight
+   * starts: injuries and battered armour are supposed to carry over.
+   */
+  prepareForBattle() {
+    this.fatigue = 0;
+    this.ap = MAX_AP;
+    this.morale = 'steady';
+    this.stunned = 0;
+    this.stances.clear();
+    this.hasActed = false;
+    this.waited = false;
+    this.turnRound = -1;
+    this.hex = null;
+    if (this.weapon?.ammo) this.ammo = this.weapon.ammo;
+    if (this.weapon?.kind === 'xbow') this.loaded = true;
+    return this;
+  }
+
+  /** Patch a survivor all the way back up (armour repaired, wounds tended). */
   resetForBattle() {
+    this.prepareForBattle();
     this.hp = this.hpMax;
     this.fatigue = 0;
     this.ap = MAX_AP;

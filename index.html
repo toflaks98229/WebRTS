@@ -12,14 +12,28 @@
 </head>
 <body>
 
-<div id="app">
+<div id="app" class="mode-campaign">
   <!-- ── top bar ─────────────────────────────────────────────── -->
   <header id="topbar">
     <div class="brand">용병단</div>
-    <div id="round-info"><span class="label">라운드</span> <b id="round-num">1</b></div>
-    <div id="turn-order" class="turn-order"></div>
+
+    <!-- campaign -->
+    <div id="date-info" class="campaign-only">
+      <span class="label">일차</span> <b id="day-num">1</b>
+      <span id="clock" class="clock">06:00</span>
+    </div>
+    <div id="speed-controls" class="campaign-only seg">
+      <button class="seg-btn" data-speed="0" title="정지">❚❚</button>
+      <button class="seg-btn active" data-speed="1" title="보통">▶</button>
+      <button class="seg-btn" data-speed="3" title="빠름">▶▶</button>
+    </div>
+    <div id="world-status" class="campaign-only grow"></div>
+
+    <!-- battle -->
+    <div id="round-info" class="battle-only"><span class="label">라운드</span> <b id="round-num">1</b></div>
+    <div id="turn-order" class="battle-only turn-order"></div>
+
     <div class="top-actions">
-      <button id="btn-newbattle" class="btn ghost" title="새 전투 생성">새 전투</button>
       <button id="btn-help" class="btn ghost" title="도움말">?</button>
     </div>
   </header>
@@ -29,12 +43,14 @@
     <canvas id="board"></canvas>
 
     <aside id="panel-left" class="panel">
-      <div id="unit-card" class="unit-card empty">유닛을 선택하세요</div>
+      <div id="unit-card" class="unit-card empty battle-only">유닛을 선택하세요</div>
+      <div id="company-card" class="company-card campaign-only"></div>
     </aside>
 
     <aside id="panel-right" class="panel">
-      <div class="panel-title">전투 기록</div>
-      <div id="log" class="log"></div>
+      <div class="panel-title"><span class="battle-only">전투 기록</span><span class="campaign-only">여정 기록</span></div>
+      <div id="log" class="log battle-only"></div>
+      <div id="world-log" class="log campaign-only"></div>
     </aside>
 
     <div id="hover-tip" class="tip hidden"></div>
@@ -43,12 +59,17 @@
 
   <!-- ── action bar ──────────────────────────────────────────── -->
   <footer id="actionbar">
-    <div id="ap-fatigue" class="resource-block"></div>
-    <div id="skills" class="skills"></div>
-    <div class="turn-buttons">
+    <!-- battle -->
+    <div id="ap-fatigue" class="resource-block battle-only"></div>
+    <div id="skills" class="skills battle-only"></div>
+    <div class="turn-buttons battle-only">
       <button id="btn-wait" class="btn">대기 <kbd>Q</kbd></button>
       <button id="btn-end" class="btn primary">턴 종료 <kbd>Space</kbd></button>
     </div>
+
+    <!-- campaign -->
+    <div id="world-hint" class="campaign-only world-hint"></div>
+    <div id="world-actions" class="campaign-only world-actions"></div>
   </footer>
 </div>
 
