@@ -22,6 +22,8 @@ export class AI {
     if (unit.withdrawn || !unit.hex) return false;
     if (this.actionsThisTurn++ > 8) return false;
 
+    // A rout runs for the nearest edge; an ordered retreat goes home.
+    if (b.retreating === unit.faction) return this.flee(unit, b.homeCol(unit.faction));
     if (unit.isFleeing) return this.flee(unit);
 
     const foes = b.enemiesOf(unit);
@@ -269,15 +271,23 @@ export class AI {
     return false;
   }
 
-  flee(unit) {
+  /**
+   * Get off the field. `homeCol` names the edge to leave by when the withdrawal
+   * was ordered; without it the unit has broken and runs for whichever edge is
+   * nearest, enemy side included.
+   */
+  flee(unit, homeCol = null) {
     const b = this.battle;
     const map = b.reachableFor(unit);
     if (!map.size) return false;
     const foes = b.enemiesOf(unit);
+    const edgeOf = (hex) => (homeCol === null
+      ? this.edgeDistance(hex)
+      : Math.abs((b.grid.get(hex)?.col ?? homeCol) - homeCol));
     let best = null;
     for (const node of map.values()) {
       const d = foes.reduce((s, f) => s + distance(node.hex, f.hex), 0);
-      const edge = this.edgeDistance(node.hex);
+      const edge = edgeOf(node.hex);
       const score = d * 2 - edge * 3 - node.ap * 0.2;
       if (!best || score > best.score) best = { hex: node.hex, score };
     }
@@ -286,10 +296,12 @@ export class AI {
 
     // Made it off the field. The unit is out of this fight but not dead: a
     // brother who breaks and runs still walks back to the company afterwards.
-    if (this.edgeDistance(unit.hex) === 0) {
+    if (edgeOf(unit.hex) === 0) {
       unit.withdrawn = true;
       unit.hex = null;
-      b.log(`${unit.name} 이(가) 전장에서 달아났다.`, 'death', unit.faction);
+      b.log(homeCol === null
+        ? `${unit.name} 이(가) 전장에서 달아났다.`
+        : `${unit.name} 이(가) 전장을 빠져나왔다.`, 'death', unit.faction);
       b.bus.emit('unit:flee', { unit });
       b.checkBattleOver();
     }

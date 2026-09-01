@@ -31,6 +31,8 @@ export class Battle {
     this.result = null;
     this.xpPool = 0;          // experience the fallen are worth, split at the end
     this.levelUps = [];
+    /** Faction that has been ordered off the field, or null. */
+    this.retreating = null;
   }
 
   // ---------------------------------------------------------------- setup
@@ -72,6 +74,21 @@ export class Battle {
   unitAt(hex) {
     if (!hex) return null;
     return this.units.find((u) => u.alive && !u.withdrawn && u.hex && eq(u.hex, hex)) || null;
+  }
+
+  /**
+   * The column a side walks off by. A retreat goes out the way you came in -
+   * running out through the enemy is not a retreat, it is a charge.
+   */
+  homeCol(faction) { return faction === 'player' ? 0 : this.grid.cols - 1; }
+
+  /** Break off the fight: `faction` heads for its own edge and leaves. */
+  orderRetreat(faction = 'player') {
+    if (this.phase !== PHASE.playing || this.retreating) return false;
+    this.retreating = faction;
+    this.log('후퇴 — 전열을 물린다.', 'round');
+    this.bus.emit('retreat', { faction });
+    return true;
   }
 
   enemiesOf(unit) { return this.living.filter((u) => u.faction !== unit.faction); }
@@ -341,7 +358,12 @@ export class Battle {
     const standingPlayers = this.players.filter((u) => !u.isFleeing).length;
     const standingEnemies = this.enemies.filter((u) => !u.isFleeing).length;
     if (standingEnemies === 0) { this.finish('victory'); return true; }
-    if (standingPlayers === 0) { this.finish('defeat'); return true; }
+    if (standingPlayers === 0) {
+      // Walking off the field on purpose is not the same as being broken on it,
+      // and the campaign charges very different prices for the two.
+      this.finish(this.retreating === 'player' ? 'retreat' : 'defeat');
+      return true;
+    }
     return false;
   }
 
@@ -369,7 +391,10 @@ export class Battle {
     this.phase = PHASE.over;
     this.result = result;
     this.levelUps = this.awardExperience();
-    this.log(result === 'victory' ? '전투에서 승리했다!' : '부대가 패주했다...', 'round');
+    this.log({
+      victory: '전투에서 승리했다!',
+      retreat: '전열을 물려 빠져나왔다.',
+    }[result] || '부대가 패주했다...', 'round');
     this.bus.emit('battle:over', { result, battle: this });
   }
 

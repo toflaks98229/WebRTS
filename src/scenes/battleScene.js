@@ -118,7 +118,7 @@ export class BattleScene {
   finish(result) {
     if (this.finished) return;
     this.finished = true;
-    this.hud.showBanner(result === 'victory' ? '승리' : '패배', 2400);
+    this.hud.showBanner({ victory: '승리', retreat: '후퇴' }[result] || '패배', 2400);
     const fallenEnemies = this.battle.units.filter((u) => u.faction === 'enemy' && !u.alive);
     const spoils = result === 'victory'
       ? salvage(this.roster.filter((u) => u.alive && !u.withdrawn), fallenEnemies)
@@ -137,10 +137,13 @@ export class BattleScene {
       `<div class="gear-row"><i>${esc(u.name)}${u.withdrawn ? ' <b style="color:#d8b447">이탈</b>' : ''}</i>`
       + `<em>체력 ${Math.max(0, Math.round(u.hp))}/${u.hpMax} · 처치 ${u.kills}</em></div>`).join('');
 
-    overlay.modal(result === 'victory' ? '전투 승리' : '패주', `
-      ${result === 'victory'
-        ? '적을 몰아냈다. 쓸 만한 장비를 챙겨 길을 이었다.'
-        : '전열이 무너졌다. 살아남은 자들이 흩어졌다 다시 모였다.'}
+    const heading = { victory: '전투 승리', retreat: '후퇴' }[result] || '패주';
+    const opening = {
+      victory: '적을 몰아냈다. 쓸 만한 장비를 챙겨 길을 이었다.',
+      retreat: '전열을 물려 빠져나왔다. 노획은 없지만 짐은 그대로다.',
+    }[result] || '전열이 무너졌다. 살아남은 자들이 흩어졌다 다시 모였다.';
+    overlay.modal(heading, `
+      ${opening}
       ${rule}<b>생존자 ${survivors.length}명</b>${rows || '<div class="gear-row"><i>없음</i></div>'}
       ${fallen.length ? `${rule}<b style="color:#d1705d">전사자 ${fallen.length}명</b>
         ${fallen.map((u) => `<div class="gear-row"><i>${esc(u.name)}</i><em>${esc(u.title)}</em></div>`).join('')}` : ''}
@@ -152,6 +155,43 @@ export class BattleScene {
         <div class="gear-row"><i>마을 상점에서 팔거나 다른 단원에게 넘길 수 있다.</i></div>` : ''}`,
       () => this.onFinish?.(result, { loot: this.loot, leftovers: this.leftovers }),
       '지도로 돌아가기');
+  }
+
+  /** Whether the player is actually driving this fighter right now. */
+  controlling(u = this.battle.current) {
+    return !!u && u.faction === 'player' && u.alive && !u.withdrawn && !u.isFleeing
+      && this.battle.phase === 'playing' && this.battle.retreating !== 'player';
+  }
+
+  /**
+   * Breaking off is irreversible and gives up the fight, so it is asked rather
+   * than assumed. Everyone who reaches their own edge walks home; anyone who
+   * does not is left behind.
+   */
+  askRetreat() {
+    const b = this.battle;
+    if (b.phase !== 'playing' || b.retreating) return;
+    overlay.choose('후퇴', `
+      <p style="color:var(--muted);margin:0 0 14px">
+        전열을 물린다. 단원들이 각자 자기 쪽 가장자리로 빠져나가고, 빠져나간
+        사람만 데려간다. 노획은 없고 무리는 살아남지만, 짐과 금고는 지킨다.
+      </p>
+      <div class="ambitions">
+        <button class="ambition" data-choice="go">
+          <span class="am-icon">🏃</span>
+          <span class="am-text"><b>물러난다</b><em>미처 빠져나오지 못한 자는 잃는다.</em></span>
+        </button>
+        <button class="ambition" data-choice="stay">
+          <span class="am-icon">⚔</span>
+          <span class="am-text"><b>계속 싸운다</b><em>전열을 유지한다.</em></span>
+        </button>
+      </div>`,
+    (pick) => {
+      if (pick !== 'go') return;
+      b.orderRetreat('player');
+      this.activeSkill = null;
+      this.hud.refresh();
+    });
   }
 
   defaultSkill(unit) {
@@ -246,7 +286,7 @@ export class BattleScene {
   onClick() {
     const b = this.battle;
     const u = b.current;
-    if (b.phase !== 'playing' || !u || u.faction !== 'player' || this.renderer.animating) return;
+    if (!this.controlling(u) || this.renderer.animating) return;
 
     const h = this.hexUnderMouse();
     if (!h || !b.grid.has(h)) return;
@@ -274,6 +314,8 @@ export class BattleScene {
       e.preventDefault(); this.endTurn();
     } else if (e.key.toLowerCase() === 'q' && !e.repeat) {
       this.wait();
+    } else if (e.key.toLowerCase() === 'r' && !e.repeat) {
+      this.askRetreat();
     } else if (e.key === 'Escape') {
       this.activeSkill = null; this.hud.refresh();
     } else if (e.key === 'Tab') {
@@ -312,8 +354,9 @@ export class BattleScene {
   maybeAutoEndTurn(now) {
     const b = this.battle;
     const u = b.current;
-    const mine = b.phase === 'playing' && u && u.faction === 'player' && !u.isFleeing;
-    if (!mine || this.renderer.animating || this.hasOptions(u)) { this.idleSince = 0; return; }
+    if (!this.controlling(u) || this.renderer.animating || this.hasOptions(u)) {
+      this.idleSince = 0; return;
+    }
 
     if (!this.idleSince) { this.idleSince = now; return; }
     if (now - this.idleSince < AUTO_END_DELAY) return;
@@ -348,23 +391,19 @@ export class BattleScene {
   }
 
   endTurn() {
-    if (this.battle.phase !== 'playing' || this.renderer.animating) return;
-    const u = this.battle.current;
-    if (!u || u.faction !== 'player') return;
+    if (this.renderer.animating || !this.controlling()) return;
     this.battle.endTurn();
   }
 
   wait() {
-    if (this.battle.phase !== 'playing' || this.renderer.animating) return;
-    const u = this.battle.current;
-    if (!u || u.faction !== 'player') return;
+    if (this.renderer.animating || !this.controlling()) return;
     this.battle.wait();
   }
 
   refreshReach() {
     const u = this.battle.current;
     const view = this.renderer.view;
-    if (u && u.faction === 'player' && this.battle.phase === 'playing' && !u.isFleeing) {
+    if (this.controlling(u)) {
       this.reach = this.battle.reachableFor(u);
       view.reachable = this.reach;
       view.selected = u;
@@ -405,7 +444,7 @@ export class BattleScene {
     if (b.phase !== 'playing') return;
     const u = b.current;
     if (!u) return;
-    if (!(u.faction === 'enemy' || u.isFleeing)) return;
+    if (!(u.faction === 'enemy' || u.isFleeing || b.retreating === u.faction)) return;
     if (this.renderer.animating) { this.aiClock = now + AI_STEP_DELAY; return; }
     if (now < (this.aiClock ?? 0)) return;
 

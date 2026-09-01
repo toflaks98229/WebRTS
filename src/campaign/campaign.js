@@ -11,7 +11,7 @@ import { TEMPLATES } from '../data/units.js';
 import { hireCostOf, itemValue, slotOf, equipItem } from './company.js';
 import { CAPTAIN_NODES, nodeAvailable, pointsFromRenown } from '../data/captainTree.js';
 import { THREAT_MAX, THREAT_PER_CLEAR, threatRise } from './threat.js';
-import { DEFAULT_AMBITION, ambitionProgress } from '../data/ambitions.js';
+import { DEFAULT_AMBITION, ambition, ambitionProgress } from '../data/ambitions.js';
 
 /** Backgrounds that turn up looking for work, roughly worst to best. */
 const RECRUIT_POOL = ['daytaler', 'farmhand', 'militia', 'brawler', 'poacher', 'sellsword', 'hedgeKnight'];
@@ -224,6 +224,9 @@ export class Campaign {
 
   /** Bands loiter near their camp until the company strays too close. */
   steerBand(band) {
+    // Straight after a fight a band is busy with its own dead. Without this a
+    // mauled company is caught again before it can limp anywhere.
+    if (band.pauseUntil && this.time < band.pauseUntil) return;
     if (distance(band.hex, this.party.hex) <= DETECT_RANGE) {
       // Re-path each time the quarry moves, otherwise the chase goes stale.
       const t = band.target;
@@ -282,18 +285,52 @@ export class Campaign {
       }
       this.gainRenown(band.roster.length * 4, false);
       this.note(`${band.name} 을(를) 물리쳤다.`, 'victory');
+    } else if (result === 'retreat') {
+      this.breakOff(band, 4, 8);
+      this.note('전열을 물려 빠져나왔다. 반나절을 잃었지만 짐은 지켰다.', 'defeat');
     } else {
-      // Survivors scatter back the way they came rather than being wiped out.
-      const away = neighbors(this.party.hex)
-        .filter((h) => this.world.passable(h))
-        .sort((a, c) => distance(c, band.hex) - distance(a, band.hex))[0];
-      if (away) this.party.hex = away;
-      this.party.stop();
-      band.stop();
-      this.time += 8;
-      this.note('간신히 몸을 빼냈다. 부대가 흩어졌다 다시 모였다.', 'defeat');
+      this.breakOff(band, 8, 14);
+      const lost = this.plunder();
+      this.note(`전열이 무너졌다. ${lost.join(' · ') || '무사히 흩어졌다'}.`, 'defeat');
     }
     this.bus.emit('encounter:resolved', { result, band });
+  }
+
+  /**
+   * Come off a fight: put ground between the company and the band, and give the
+   * band something else to do for a while so the road is not an ambush chain.
+   */
+  breakOff(band, hours, bandBusyHours) {
+    let at = this.party.hex;
+    for (let step = 0; step < 2; step++) {
+      const away = neighbors(at)
+        .filter((h) => this.world.passable(h))
+        .sort((a, c) => distance(c, band.hex) - distance(a, band.hex))[0];
+      if (!away || distance(away, band.hex) <= distance(at, band.hex)) break;
+      at = away;
+    }
+    this.party.hex = at;
+    this.party.stop();
+    band.stop();
+    band.pauseUntil = this.time + bandBusyHours;
+    this.time += hours;
+  }
+
+  /**
+   * What a beating costs. Half the baggage goes whatever the company is playing
+   * for; the rest is aimed squarely at the ambition, so a defeat is always a
+   * step back down the road that was chosen.
+   */
+  plunder() {
+    const lost = [];
+    const half = Math.floor(this.company.stash.length / 2);
+    if (half > 0) {
+      this.company.stash.splice(0, half);
+      lost.push(`창고에서 ${half}점을 빼앗겼다`);
+    }
+    const hit = ambition(this.ambitionId).forfeit?.(this);
+    if (hit) lost.push(hit);
+    return lost;
   }
 
   respawnCamps(hours) {

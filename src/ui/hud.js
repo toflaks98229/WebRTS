@@ -21,6 +21,7 @@ export class HUD {
 
     $('#btn-end').addEventListener('click', () => this.game?.endTurn());
     $('#btn-wait').addEventListener('click', () => this.game?.wait());
+    $('#btn-retreat').addEventListener('click', () => this.game?.askRetreat?.());
 
   }
 
@@ -125,7 +126,8 @@ export class HUD {
   renderSkills() {
     const b = this.battle;
     const u = b.current;
-    const playerTurn = u && u.faction === 'player' && b.phase === 'playing';
+    const playerTurn = u && u.faction === 'player' && b.phase === 'playing'
+      && !u.isFleeing && b.retreating !== 'player';
 
     this.el.resource.innerHTML = u ? `
       <div class="meter">
@@ -137,9 +139,14 @@ export class HUD {
         <div class="meter-bar"><div class="meter-fill f-fat" style="width:${pct(u.fatigue, u.fatigueMax)}%"></div></div>
       </div>` : '';
 
+    const retreat = $('#btn-retreat');
+    retreat.disabled = b.phase !== 'playing' || !!b.retreating;
+    retreat.textContent = b.retreating ? '후퇴 중' : '후퇴 ';
+    if (!b.retreating) retreat.insertAdjacentHTML('beforeend', '<kbd>R</kbd>');
+
     if (!playerTurn) {
       this.el.skills.innerHTML = `<div style="color:var(--muted);font-style:italic;align-self:center">
-        ${b.phase === 'over' ? '전투 종료' : '적의 차례...'}</div>`;
+        ${b.phase === 'over' ? '전투 종료' : b.retreating ? '전열을 물리는 중...' : '적의 차례...'}</div>`;
       $('#btn-end').disabled = true;
       $('#btn-wait').disabled = true;
       return;

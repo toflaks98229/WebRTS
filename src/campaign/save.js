@@ -89,6 +89,7 @@ function saveParty(p) {
   return {
     id: p.id, name: p.name, hex: p.hex, path: p.path, spent: p.spent, sub: p.sub,
     alive: p.alive, roster: p.roster, strength: p.strength, speed: p.speed,
+    pauseUntil: p.pauseUntil ?? 0,
     campId: p.camp ? p.camp.id : null,
   };
 }
@@ -99,6 +100,7 @@ function applyParty(target, d) {
   target.spent = d.spent || 0;
   target.sub = d.sub || 0;
   target.alive = d.alive !== false;
+  target.pauseUntil = d.pauseUntil || 0;
 }
 
 // -------------------------------------------------------------- serialise

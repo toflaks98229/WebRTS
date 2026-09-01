@@ -10,6 +10,14 @@
  * is the point - an ambition is a lens on the existing game, not a new economy
  * bolted beside it.
  */
+import { THREAT_MAX } from '../campaign/threat.js';
+
+/**
+ * `forfeit` is what a lost battle costs, and it is deliberately different for
+ * each goal: a beating should push the company back down the road it chose.
+ * Losing crowns barely stings a company chasing renown, and losing renown means
+ * nothing to one hoarding coin. It returns what to tell the player, or null.
+ */
 export const AMBITIONS = {
   renown: {
     id: 'renown',
@@ -19,6 +27,11 @@ export const AMBITIONS = {
     unit: '명성',
     goal: 1200,
     have: (c) => c.company.renown,
+    forfeit: (c) => {
+      const n = Math.min(c.company.renown, 80);
+      c.company.renown -= n;
+      return n ? `명성 ${n}` : null;
+    },
   },
   coffers: {
     id: 'coffers',
@@ -28,6 +41,11 @@ export const AMBITIONS = {
     unit: '크라운',
     goal: 8000,
     have: (c) => c.company.crowns,
+    forfeit: (c) => {
+      const n = Math.round(c.company.crowns * 0.25);
+      c.company.crowns -= n;
+      return n ? `${n} 크라운` : null;
+    },
   },
   roots: {
     id: 'roots',
@@ -37,6 +55,11 @@ export const AMBITIONS = {
     unit: '야영지',
     goal: 12,
     have: (c) => c.campsCleared,
+    forfeit: (c) => {
+      const before = c.threat;
+      c.threat = Math.min(THREAT_MAX, c.threat + 8);
+      return c.threat > before ? '무리가 기세를 얻었다' : null;
+    },
   },
 };
 
