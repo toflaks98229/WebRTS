@@ -4,6 +4,7 @@ import { bandStrengthLabel } from '../campaign/bands.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
 import { xpProgress } from '../data/perks.js';
 import { ambitionProgress } from '../data/ambitions.js';
+import { injury } from '../data/injuries.js';
 import { threatDef, THREAT_MAX } from '../campaign/threat.js';
 import { HOURS_PER_DAY } from '../campaign/campaign.js';
 
@@ -65,6 +66,10 @@ export class WorldHud {
       `단원 <b>${alive.length}</b>명`,
       `일당 <b>${c.company.dailyWage}</b>`,
       wounded ? `부상 <b>${wounded}</b>명` : null,
+      (() => {
+        const marked = alive.filter((u) => u.injuries.size).length;
+        return marked ? `<b style="color:#d97a2b">후유증 ${marked}명</b>` : null;
+      })(),
       points ? `<b style="color:#7fb069">특성 ${points}점</b>` : null,
       c.party.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
     ].filter(Boolean).join(' · ') + this.renderMeters();
@@ -114,7 +119,9 @@ export class WorldHud {
         <div>
           <div class="rn">${u.isCaptain ? '<span class="cp-cap">단장</span> ' : ''}${esc(u.name)}
             ${u.perkPoints ? `<span class="cp-pts">+${u.perkPoints}</span>` : ''}</div>
-          <div class="rt">${u.level}레벨 · ${esc(u.title)} · ${esc(u.weapon?.name || '맨손')}</div>
+          <div class="rt">${u.level}레벨 · ${esc(u.title)} · ${esc(u.weapon?.name || '맨손')}
+            ${u.injuries.size ? `<span class="cc-wounds" title="${[...u.injuries].map((i) => esc(injury(i)?.name || i)).join(', ')}">`
+              + [...u.injuries].map((i) => `<span>${injury(i)?.icon || '🩹'}</span>`).join('') + '</span>' : ''}</div>
         </div>
         <div>
           <div class="mini-bar"><div style="width:${hp}%;background:linear-gradient(#7cc063,#4b7a3a)"></div></div>

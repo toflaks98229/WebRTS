@@ -2,6 +2,7 @@ import { WEAPONS, SHIELDS, BODY_ARMOR, HELMETS, item } from '../data/items.js';
 import { SKILLS } from '../data/skills.js';
 import { randomName } from '../data/units.js';
 import { levelForXP, MAX_LEVEL, PERKS } from '../data/perks.js';
+import { injuryMod } from '../data/injuries.js';
 
 export const MAX_AP = 9;
 export const FATIGUE_RECOVERY = 15;
@@ -18,7 +19,7 @@ const MORALE_LADDER = ['fleeing', 'breaking', 'wavering', 'steady', 'confident']
 /** Attribute gain rolled at each level-up, as [min, max]. */
 const LEVEL_GAINS = {
   hpBase: [2, 5], fatigueBase: [2, 6], resolveBase: [1, 3], initiativeBase: [1, 4],
-  meleeSkill: [1, 3], rangedSkill: [1, 3], meleeDefenseBase: [0, 2], rangedDefenseBase: [0, 2],
+  meleeSkillBase: [1, 3], rangedSkillBase: [1, 3], meleeDefenseBase: [0, 2], rangedDefenseBase: [0, 2],
 };
 
 let nextId = 1;
@@ -47,8 +48,8 @@ export class Unit {
     this.fatigueBase = roll(tpl.fatigue);
     this.resolveBase = roll(tpl.resolve);
     this.initiativeBase = roll(tpl.initiative);
-    this.meleeSkill = roll(tpl.meleeSkill);
-    this.rangedSkill = roll(tpl.rangedSkill);
+    this.meleeSkillBase = roll(tpl.meleeSkill);
+    this.rangedSkillBase = roll(tpl.rangedSkill);
     this.meleeDefenseBase = roll(tpl.meleeDefense);
     this.rangedDefenseBase = roll(tpl.rangedDefense);
 
@@ -67,6 +68,11 @@ export class Unit {
     this.perkPoints = 0;
     this.perks = new Set();
     this.isCaptain = !!opts.captain;
+    /**
+     * Lasting wounds, by id. Unlike hit points these never come back on their
+     * own - a healer has to take them off. See data/injuries.js.
+     */
+    this.injuries = new Set();
     /** Captain-tree nodes in force for this unit's side; set when a battle starts. */
     this.companyPerks = new Set();
 
@@ -81,6 +87,7 @@ export class Unit {
     this.withdrawn = false;     // ran off the field; out of the fight, not dead
     this.overwhelmed = 0;       // rounds of the Overwhelm penalty left
     this.livesUsed = false;     // Nine Lives, once per battle
+    this.injuryRisk = 0;        // banked by heavy blows; cashed in when the fight ends
     this.stances = new Set();
     this.hasActed = false;
     this.waited = false;
@@ -126,10 +133,16 @@ export class Unit {
   }
 
   // ---- derived stats -------------------------------------------------
+  /** What a fighter's wounds take off one stat. Zero for the unhurt. */
+  hurt(stat) { return injuryMod(this, stat); }
+
   get hpMax() { return Math.round(this.hpBase * (this.hasPerk('colossus') ? 1.2 : 1)); }
 
+  get meleeSkill() { return Math.max(0, this.meleeSkillBase + this.hurt('melee')); }
+  get rangedSkill() { return Math.max(0, this.rangedSkillBase + this.hurt('ranged')); }
+
   get resolve() {
-    let r = this.resolveBase;
+    let r = this.resolveBase + this.hurt('resolve');
     if (this.hasCompany('rally')) r += 10;
     if (this.hasPerk('fortifiedMind')) r = Math.round(r * 1.25);
     return r;
@@ -147,18 +160,21 @@ export class Unit {
     let base = this.fatigueBase;
     if (this.hasCompany('discipline')) base += 10;
     if (this.hasPerk('brawny')) base = Math.round(base * 1.15);
-    return Math.max(20, base - this.gearFatigue);
+    return Math.max(20, base - this.gearFatigue + this.hurt('fatigue'));
   }
   get fatigueLeft() { return Math.max(0, this.fatigueMax - this.fatigue); }
   /** 0..1 - how spent the unit is. Drives the defense penalty. */
   get exhaustion() { return this.fatigueMax ? this.fatigue / this.fatigueMax : 0; }
 
-  get maxAP() { return MAX_AP + (this.hasCaptainPerk('warlord') ? 1 : 0); }
+  get maxAP() {
+    return Math.max(4, MAX_AP + (this.hasCaptainPerk('warlord') ? 1 : 0) + this.hurt('ap'));
+  }
 
   get fatigueRecovery() { return this.hasPerk('relentless') ? 25 : FATIGUE_RECOVERY; }
 
   get initiative() {
-    return Math.max(0, Math.round(this.initiativeBase - this.fatigue - this.gearFatigue * 0.5));
+    return Math.max(0, Math.round(this.initiativeBase + this.hurt('initiative')
+      - this.fatigue - this.gearFatigue * 0.5));
   }
 
   get moraleDef() { return MORALE[this.morale]; }
@@ -180,7 +196,8 @@ export class Unit {
   shieldBonus(kind) {
     if (!this.shield || this.shield.durability <= 0) return 0;
     const base = kind === 'ranged' ? this.shield.rangedDefense : this.shield.meleeDefense;
-    return Math.round(base * (this.hasPerk('shieldExpert') ? 1.25 : 1));
+    const grip = 1 + this.hurt('shield');       // a ruined hand cannot brace a shield
+    return Math.max(0, Math.round(base * (this.hasPerk('shieldExpert') ? 1.25 : 1) * grip));
   }
 
   /** Extra defense as wounds mount, from Last Stand. */
@@ -277,6 +294,7 @@ export class Unit {
     this.withdrawn = false;
     this.overwhelmed = 0;
     this.livesUsed = false;
+    this.injuryRisk = 0;
     this.stances.clear();
     this.hasActed = false;
     this.waited = false;

@@ -11,6 +11,7 @@ import { TEMPLATES } from '../data/units.js';
 import { hireCostOf, itemValue, slotOf, equipItem } from './company.js';
 import { CAPTAIN_NODES, nodeAvailable, pointsFromRenown } from '../data/captainTree.js';
 import { THREAT_MAX, THREAT_PER_CLEAR, threatRise } from './threat.js';
+import { injury, severityOf, healerLevel, canTreat } from '../data/injuries.js';
 import { DEFAULT_AMBITION, ambition, ambitionProgress } from '../data/ambitions.js';
 
 /** Backgrounds that turn up looking for work, roughly worst to best. */
@@ -182,6 +183,17 @@ export class Campaign {
     }
   }
 
+  /**
+   * Let `hours` go by outside the normal tick - a beating, a stay under the
+   * surgeon. Time spent is time the country gets worse in and wages come due,
+   * so it goes through here rather than straight onto the clock.
+   */
+  passTime(hours) {
+    this.time += hours;
+    this.raiseThreat(hours);
+    this.checkDayRollover();
+  }
+
   /** Camps left standing make the country worse, a little at a time. */
   raiseThreat(hours) {
     const live = this.bands.filter((b) => b.alive && b.camp).length;
@@ -313,7 +325,7 @@ export class Campaign {
     this.party.stop();
     band.stop();
     band.pauseUntil = this.time + bandBusyHours;
-    this.time += hours;
+    this.passTime(hours);
   }
 
   /**
@@ -331,6 +343,42 @@ export class Campaign {
     const hit = ambition(this.ambitionId).forfeit?.(this);
     if (hit) lost.push(hit);
     return lost;
+  }
+
+  // ---------------------------------------------------------------- wounds
+  /** 0 village, 1 town herbalist, 2 city surgeon. */
+  healerAt(settlement) { return settlement ? healerLevel(SETTLEMENTS[settlement.tier].size) : 0; }
+
+  /** The wounds this place is equipped to take off a man. */
+  treatable(unit, settlement) {
+    const h = this.healerAt(settlement);
+    return [...unit.injuries].map(injury).filter((i) => i && canTreat(i, h));
+  }
+
+  /** A company surgeon of its own makes every stay shorter and cheaper. */
+  treatPrice(inj) {
+    const s = severityOf(inj);
+    const own = this.company.captainPerks.has('surgeon');
+    return { cost: Math.round(s.cost * (own ? 0.6 : 1)), days: own ? Math.ceil(s.days / 2) : s.days };
+  }
+
+  /**
+   * Have a wound seen to. Costs crowns and, more expensively, days - and the
+   * days are the reason a hurt company cannot simply wait somewhere safe.
+   */
+  treat(unit, injuryId, settlement) {
+    const inj = injury(injuryId);
+    if (!inj || !unit.injuries.has(injuryId)) return { ok: false, reason: 'none' };
+    if (!canTreat(inj, this.healerAt(settlement))) return { ok: false, reason: 'healer' };
+    const { cost, days } = this.treatPrice(inj);
+    if (!this.company.canAfford(cost)) return { ok: false, reason: 'crowns', cost };
+
+    this.company.spend(cost);
+    unit.injuries.delete(injuryId);
+    this.passTime(days * HOURS_PER_DAY);
+    this.note(`${unit.name} 의 ${inj.name} 을(를) 치료했다 — ${cost} 크라운 · ${days}일.`, 'reward');
+    this.bus.emit('roster:change', { unit });
+    return { ok: true, cost, days };
   }
 
   respawnCamps(hours) {

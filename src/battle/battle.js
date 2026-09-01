@@ -6,6 +6,10 @@ import { SKILLS } from '../data/skills.js';
 import { resolveAttack, hitChance, checkMorale, boostMorale } from './combat.js';
 import { EventBus } from '../core/events.js';
 import { RNG } from '../core/rng.js';
+import { rollInjury } from '../data/injuries.js';
+
+/** However badly a man was used, he is never quite certain to be marked. */
+const INJURY_CAP = 70;
 
 export const PHASE = { deploy: 'deploy', playing: 'playing', over: 'over' };
 
@@ -123,6 +127,7 @@ export class Battle {
     let ap = t.moveCost;
     let climbAP = climb.ap;
     if (unit?.hasPerk('pathfinder')) { ap = Math.max(2, ap - 1); climbAP = Math.max(0, climbAP - 1); }
+    ap += unit?.hurt('move') || 0;
     return { ap: ap + climbAP, fat: t.moveFatigue + climb.fat };
   }
 
@@ -387,9 +392,31 @@ export class Battle {
     return ups;
   }
 
+  /**
+   * Wounds that outlast the battle. Rolled for anyone who came out of it badly
+   * cut up, and always for a man who only lived because Nine Lives caught him.
+   */
+  rollInjuries() {
+    const taken = [];
+    for (const u of this.units) {
+      if (u.faction !== 'player' || !u.alive) continue;
+      // Risk was banked blow by blow during the fight; see combat.js.
+      const nearThing = u.livesUsed;
+      const risk = Math.min(INJURY_CAP, u.injuryRisk || 0);
+      if (!nearThing && !this.rng.chance(risk)) continue;
+      const inj = rollInjury(this.rng, u);
+      if (!inj) continue;
+      u.injuries.add(inj.id);
+      taken.push({ unit: u, injury: inj });
+      this.log(`${u.name} 이(가) ${inj.name} 을(를) 얻었다.`, 'death', u.faction);
+    }
+    return taken;
+  }
+
   finish(result) {
     this.phase = PHASE.over;
     this.result = result;
+    this.injured = this.rollInjuries();
     this.levelUps = this.awardExperience();
     this.log({
       victory: '전투에서 승리했다!',

@@ -3,12 +3,14 @@ import { SETTLEMENTS } from '../data/worldTerrain.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
 import { hireCostOf, wageOf, itemDef, itemValue, slotOf } from '../campaign/company.js';
 import { itemIcon } from './icons.js';
+import { injury, severityOf, healerName } from '../data/injuries.js';
 
 const TABS = [
   { id: 'contracts', name: '계약' },
   { id: 'hire', name: '고용' },
   { id: 'shop', name: '상점' },
   { id: 'stash', name: '창고' },
+  { id: 'healer', name: '치료' },
 ];
 
 const SLOT_NAME = { weapon: '무기', shield: '방패', body: '갑옷', head: '투구' };
@@ -174,6 +176,49 @@ export class SettlementPanel {
   }
 
   // ------------------------------------------------------------- events
+  /**
+   * The infirmary. What it can do depends entirely on where you are standing:
+   * a village has nobody, a town has a herbalist for the light stuff, the city
+   * has a surgeon. Anything this place cannot handle is still listed, greyed
+   * out, so the player can see what they are walking towards.
+   */
+  healer() {
+    const c = this.campaign;
+    const level = c.healerAt(this.settlement);
+    const hurt = c.roster.filter((u) => u.alive && u.injuries.size);
+
+    const head = `<div class="sp-note">
+      이곳의 의술 — <b>${healerName(level)}</b>${level === 0
+        ? '. 마을에는 상처를 볼 사람이 없다. 읍의 약초상이나 도시의 외과의를 찾아야 한다.'
+        : level === 1 ? '. 가벼운 상처만 볼 수 있다. 중상은 도시의 외과의가 필요하다.'
+        : '. 어떤 상처든 볼 수 있다.'}
+    </div>`;
+
+    if (!hurt.length) return `${head}<div class="sp-empty">성치 않은 단원이 없다.</div>`;
+
+    const rows = hurt.map((u) => {
+      const wounds = [...u.injuries].map(injury).filter(Boolean).map((inj) => {
+        const sev = severityOf(inj);
+        const can = level >= sev.healer;
+        const { cost, days } = c.treatPrice(inj);
+        const afford = c.company.canAfford(cost);
+        return `<div class="wound ${can ? '' : 'out-of-reach'}">
+          <span class="w-icon">${inj.icon}</span>
+          <span class="w-text"><b>${esc(inj.name)}</b><em>${esc(inj.desc)}</em></span>
+          <span class="w-sev">${sev.name}</span>
+          ${can
+            ? `<button class="btn small" data-treat="${u.id}:${inj.id}" ${afford ? '' : 'disabled'}>
+                 ${cost} 크라운 · ${days}일</button>`
+            : `<span class="w-need">${healerName(sev.healer)} 필요</span>`}
+        </div>`;
+      }).join('');
+      return `<div class="sp-row wounded"><div class="sp-row-head"><i>${esc(u.name)}</i>
+        <em>${esc(u.title)} · ${u.level} 레벨</em></div>${wounds}</div>`;
+    }).join('');
+
+    return head + rows;
+  }
+
   bind() {
     const root = document.querySelector('#modal-body');
     root.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
@@ -192,6 +237,18 @@ export class SettlementPanel {
       const r = this.campaign.hire(u, this.settlement, this.maxSize);
       this.flash = r.ok ? `${esc(u.name)} 이(가) 합류했다.`
         : r.reason === 'full' ? '더 받을 자리가 없다.' : '크라운이 모자란다.';
+      this.after();
+    }));
+
+    root.querySelectorAll('[data-treat]').forEach((b) => b.addEventListener('click', () => {
+      const [uid, injId] = b.dataset.treat.split(':');
+      const u = this.campaign.roster.find((x) => x.id === Number(uid));
+      const inj = injury(injId);
+      if (!u || !inj) return;
+      const r = this.campaign.treat(u, injId, this.settlement);
+      this.flash = r.ok
+        ? `${esc(u.name)} 의 ${esc(inj.name)} 을(를) 치료했다 — ${r.cost} 크라운, ${r.days}일이 갔다.`
+        : r.reason === 'crowns' ? '크라운이 모자란다.' : '이곳에서는 볼 수 없는 상처다.';
       this.after();
     }));
 

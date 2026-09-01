@@ -8,6 +8,24 @@ export const HEIGHT_DAMAGE_BONUS = 0.15;
 export const SURROUND_BONUS = 5;
 export const RANGED_FALLOFF = 4;
 
+/**
+ * A blow has to be this big a share of a man to be worth remembering.
+ *
+ * What counts is the whole force of it, not just what reached flesh: armour
+ * that stops an axe still leaves the arm underneath broken, so the part the
+ * mail ate is counted at half weight. Measured over 200 battles, this marks
+ * about a third of survivors and leaves roughly 0.4 lasting wounds per fight -
+ * a handful over a campaign, which is what makes the trip to a surgeon a thing
+ * you plan for rather than a thing that never comes up.
+ */
+const LASTING_BLOW = 0.15;
+/** Share of the armour's share that still reaches the bone. */
+const LASTING_THROUGH_ARMOUR = 0.5;
+/** How much of the blow carries over as risk of a lasting wound. */
+const LASTING_WEIGHT = 55;
+/** A blow to the head is the one most likely to leave something behind. */
+const LASTING_HEAD = 8;
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /**
@@ -178,6 +196,18 @@ export function resolveAttack(battle, attacker, target, sk, opts = {}) {
     target.livesUsed = true;
     target.hp = 1;
     battle.log(`${target.name} 이(가) 죽음의 문턱에서 버텼다!`, 'crit', target.faction);
+  }
+
+  // Whether this leaves a mark is settled after the battle, but the reason is
+  // recorded here: end-of-fight health cannot tell a man who was nearly taken
+  // apart from one who was never touched, because armour means most fighters
+  // finish either dead or barely scratched.
+  if (target.hp > 0 && target.faction === 'player') {
+    const share = (res.hpDamage + res.armorDamage * LASTING_THROUGH_ARMOUR) / target.hpMax;
+    if (share >= LASTING_BLOW || res.head) {
+      target.injuryRisk = (target.injuryRisk || 0)
+        + Math.round(share * LASTING_WEIGHT) + (res.head ? LASTING_HEAD : 0);
+    }
   }
 
   if (target.hp <= 0) {

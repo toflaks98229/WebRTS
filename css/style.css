@@ -652,3 +652,33 @@ kbd {
 /* 되돌릴 수 없는 명령은 눈에 띄어야 한다 */
 .btn.danger { border-color: #6b3730; color: #d1705d; }
 .btn.danger:hover:not(:disabled) { border-color: #c2453a; color: #e08b78; background: #c2453a1c; }
+
+
+/* ── 치료소 ───────────────────────────────────────────────────────── */
+.sp-note { color: var(--muted); font-size: 13px; margin: 0 0 12px; line-height: 1.6; }
+.sp-note b { color: var(--gold); }
+.sp-row.wounded { display: flex; flex-direction: column; gap: 6px; }
+.sp-row-head { display: flex; justify-content: space-between; align-items: baseline; }
+.sp-row-head i { font-style: normal; font-weight: 600; }
+.sp-row-head em { font-style: normal; color: var(--muted); font-size: 12px; }
+.wound {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: #0000002e;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+}
+.wound.out-of-reach { opacity: 0.55; }
+.wound .w-icon { font-size: 15px; flex: none; }
+.wound .w-text { display: flex; flex-direction: column; flex: 1 1 auto; }
+.wound .w-text b { font-size: 13.5px; }
+.wound .w-text em { font-style: normal; color: var(--muted); font-size: 11.5px; }
+.wound .w-sev { font-size: 11px; color: var(--muted); flex: none; }
+.wound .w-need { font-size: 11.5px; color: #d97a2b; flex: none; }
+.wound .btn.small { padding: 3px 9px; font-size: 12px; flex: none; }
+
+/* 명부에 붙는 부상 표시 */
+.cc-wounds { display: inline-flex; gap: 3px; margin-left: 5px; }
+.cc-wounds span { font-size: 10px; opacity: 0.85; }

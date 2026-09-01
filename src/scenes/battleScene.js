@@ -149,6 +149,10 @@ export class BattleScene {
         ${fallen.map((u) => `<div class="gear-row"><i>${esc(u.name)}</i><em>${esc(u.title)}</em></div>`).join('')}` : ''}
       ${this.loot?.length ? `${rule}<b style="color:#c8a24a">현장에서 갖춘 장비</b>
         ${this.loot.map((c) => `<div class="gear-row"><i>${esc(c.unit.name)}</i><em>${esc(c.from)} → ${esc(c.to)}</em></div>`).join('')}` : ''}
+      ${(this.battle.injured || []).length ? `${rule}<b style="color:#d97a2b">후유증</b>
+        ${this.battle.injured.map((x) => `<div class="gear-row"><i>${esc(x.unit.name)}</i>`
+          + `<em>${x.injury.icon} ${esc(x.injury.name)} · ${esc(x.injury.desc)}</em></div>`).join('')}
+        <div class="gear-row"><i>읍의 약초상이나 도시의 외과의를 찾아야 낫는다.</i></div>` : ''}
       ${ups.length ? `${rule}<b style="color:#7fb069">레벨 상승</b>
         ${ups.map((l) => `<div class="gear-row"><i>${esc(l.unit.name)}</i><em>${l.unit.level} 레벨 · 특성 점수 ${l.unit.perkPoints}</em></div>`).join('')}` : ''}
       ${this.leftovers?.length ? `${rule}<b style="color:#c8a24a">창고로 보낸 노획품 ${this.leftovers.length}점</b>

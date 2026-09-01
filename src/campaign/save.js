@@ -35,8 +35,8 @@ function saveUnit(u) {
     fatigueBase: u.fatigueBase,
     resolveBase: u.resolveBase,
     initiativeBase: u.initiativeBase,
-    meleeSkill: u.meleeSkill,
-    rangedSkill: u.rangedSkill,
+    meleeSkillBase: u.meleeSkillBase,
+    rangedSkillBase: u.rangedSkillBase,
     meleeDefenseBase: u.meleeDefenseBase,
     rangedDefenseBase: u.rangedDefenseBase,
     level: u.level,
@@ -44,6 +44,7 @@ function saveUnit(u) {
     perkPoints: u.perkPoints,
     perks: [...u.perks],
     isCaptain: u.isCaptain,
+    injuries: [...u.injuries],
     hp: u.hp,
     kills: u.kills,
     // Only the parts of a kit that wear down need storing; the rest is a lookup.
@@ -60,11 +61,12 @@ function reviveUnit(d) {
   const tpl = TEMPLATES[d.tpl] || TEMPLATES.militia;
   const u = new Unit(tpl, scratch, { faction: d.faction, name: d.name });
   u.id = d.id;
-  for (const k of ['hpBase', 'fatigueBase', 'resolveBase', 'initiativeBase', 'meleeSkill',
-    'rangedSkill', 'meleeDefenseBase', 'rangedDefenseBase', 'level', 'xp', 'perkPoints',
+  for (const k of ['hpBase', 'fatigueBase', 'resolveBase', 'initiativeBase', 'meleeSkillBase',
+    'rangedSkillBase', 'meleeDefenseBase', 'rangedDefenseBase', 'level', 'xp', 'perkPoints',
     'kills']) u[k] = d[k];
   u.isCaptain = !!d.isCaptain;
   u.perks = new Set(d.perks || []);
+  u.injuries = new Set(d.injuries || []);
 
   u.weapon = d.weapon && WEAPONS[d.weapon] ? { ...WEAPONS[d.weapon] } : null;
   u.shield = d.shield && SHIELDS[d.shield.id]
