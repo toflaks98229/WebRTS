@@ -57,6 +57,8 @@ export class Campaign {
   constructor({ seed, cols = 28, rows = 18, roster = [], crowns = 900,
     ambition = DEFAULT_AMBITION } = {}) {
     this.rng = new RNG(seed);
+    /** The world is regenerated from this on load, never stored. */
+    this.seed = this.rng.seed;
     this.bus = new EventBus();
     this.world = new World(cols, rows).generate(this.rng);
     this.company = new Company(roster, crowns);
@@ -326,12 +328,14 @@ export class Campaign {
 
   // ---------------------------------------------------------------- upkeep
   checkDayRollover() {
+    const before = this.lastPaidDay;
     while (this.lastPaidDay < this.day) {
       this.lastPaidDay++;
       this.payWages();
       this.expireContracts();
       this.refreshBoards();
     }
+    if (this.lastPaidDay !== before) this.bus.emit('day', { day: this.day });
   }
 
   /** Wages come out every dawn. Miss too many and people walk. */

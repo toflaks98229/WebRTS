@@ -11,7 +11,8 @@ import { Campaign } from './campaign/campaign.js';
 import { CampaignScene } from './scenes/campaignScene.js';
 import { BattleScene } from './scenes/battleScene.js';
 import { LabScene } from './scenes/labScene.js';
-import { AMBITIONS, ambitionProgress } from './data/ambitions.js';
+import { AMBITIONS, ambition } from './data/ambitions.js';
+import { readSave, writeSave, clearSave, savePeek } from './campaign/save.js';
 
 /** How many brothers the company can field at once. */
 export const MAX_COMPANY_SIZE = 9;
@@ -37,7 +38,7 @@ class App {
     this.battleHud = new HUD();
     this.worldHud = new WorldHud();
 
-    this.newCampaign();
+    this.bootCampaign();
     this.bindInput();
     this.loadSprites();
 
@@ -46,19 +47,58 @@ class App {
     requestAnimationFrame(this.loop);
   }
 
+  /**
+   * A run outlives a browser tab. If there is a campaign in the slot, offer it
+   * back before starting over - losing fifty days to a closed tab is the one
+   * failure the player cannot do anything about.
+   */
+  bootCampaign() {
+    const peek = savePeek();
+    if (!peek) { this.newCampaign(); return; }
+    const a = ambition(peek.ambitionId);
+    overlay.choose('용병단', `
+      <p style="color:var(--muted);margin:0 0 14px">지난 여정이 남아 있다.</p>
+      <div class="ambitions">
+        <button class="ambition" data-choice="resume">
+          <span class="am-icon">${a.icon}</span>
+          <span class="am-text"><b>여정을 이어간다</b>
+            <em>${peek.day}일차 · 단원 ${peek.size}명 · ${peek.crowns.toLocaleString()} 크라운</em>
+            <span class="am-goal">${esc(a.name)}</span></span>
+        </button>
+        <button class="ambition" data-choice="fresh">
+          <span class="am-icon">✧</span>
+          <span class="am-text"><b>새 용병단을 꾸린다</b>
+            <em>지난 기록은 사라진다.</em></span>
+        </button>
+      </div>`,
+    (pick) => {
+      const restored = pick === 'resume' ? readSave() : null;
+      if (restored) { this.useCampaign(restored); this.campaign.note('여정을 이어간다.', 'start'); }
+      else { clearSave(); this.newCampaign(); }
+    }, 'wide');
+  }
+
   newCampaign() {
     // The first sword is the captain; the tree they feed belongs to the outfit,
     // so a successor inherits everything the company has learned.
     const roster = STARTING_KINDS.map((k, i) =>
       new Unit(TEMPLATES[k], this.rng, { faction: 'player', captain: i === 0 }));
-    this.campaign = new Campaign({
+    this.useCampaign(new Campaign({
       seed: this.rng.int(0, 1e9), cols: 28, rows: 18, roster, crowns: STARTING_CROWNS,
-    });
-    this.campaignScene = new CampaignScene(this, this.campaign);
-    this.campaign.bus.on('ambition:done', ({ progress }) => this.runComplete(progress));
-    this.setScene(this.campaignScene);
+    }));
     this.askAmbition();
   }
+
+  /** Put a campaign - new or restored - in charge, and keep it written down. */
+  useCampaign(campaign) {
+    this.campaign = campaign;
+    this.campaignScene = new CampaignScene(this, campaign);
+    campaign.bus.on('ambition:done', ({ progress }) => this.runComplete(progress));
+    campaign.bus.on('day', () => this.autosave());
+    this.setScene(this.campaignScene);
+  }
+
+  autosave() { if (this.campaign && !this.campaign.ambitionDone) writeSave(this.campaign); }
 
   /**
    * A company with no goal is a sandbox. The choice is made before the clock
@@ -86,6 +126,7 @@ class App {
       const a = AMBITIONS[id];
       this.campaign.note(`용병단의 뜻을 세웠다 — ${a.name} (${a.unit} ${a.goal}).`, 'renown');
       this.worldHud.refresh();
+      this.autosave();
     }, 'wide');
   }
 
@@ -106,7 +147,7 @@ class App {
       ${row('남은 단원', `${alive.length}명`)}
       ${best ? row('최고참', `${esc(best.name)} · ${best.level} 레벨`) : ''}
       ${row('금고', `${c.company.crowns.toLocaleString()} 크라운`)}`,
-    () => this.newCampaign(), '새 용병단');
+    () => { clearSave(); this.newCampaign(); }, '새 용병단');
   }
 
   /** The company's roster, purse and stash - the state that outlives a battle. */
@@ -175,7 +216,8 @@ class App {
     }
 
     this.setScene(this.campaignScene);
-    if (!this.company.size) this.gameOver();
+    if (!this.company.size) { this.gameOver(); return; }
+    this.autosave();
   }
 
   /** Debug sandbox. Does not touch the campaign; Esc or the button returns. */
@@ -191,7 +233,7 @@ class App {
       마지막 단원까지 쓰러졌다. ${this.campaign.day}일간의 여정이 여기서 끝났다.
       <hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">
       새 용병단을 꾸려 다시 시작한다.`,
-    () => this.newCampaign(), '새로 시작');
+    () => { clearSave(); this.newCampaign(); }, '새로 시작');
   }
 
   // ------------------------------------------------------------ input

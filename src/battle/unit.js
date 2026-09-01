@@ -23,6 +23,12 @@ const LEVEL_GAINS = {
 
 let nextId = 1;
 
+/**
+ * Keep freshly minted units clear of ids restored from a save. Called once on
+ * load with the highest id that came back.
+ */
+export function reserveUnitIds(highest) { nextId = Math.max(nextId, (highest | 0) + 1); }
+
 export class Unit {
   constructor(tpl, rng, opts = {}) {
     const roll = (range) => rng.int(range[0], range[1]);
