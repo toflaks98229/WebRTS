@@ -10,6 +10,8 @@ import { Unit } from '../battle/unit.js';
 import { TEMPLATES } from '../data/units.js';
 import { hireCostOf, itemValue, slotOf, equipItem } from './company.js';
 import { CAPTAIN_NODES, nodeAvailable, pointsFromRenown } from '../data/captainTree.js';
+import { THREAT_MAX, THREAT_PER_CLEAR, threatRise } from './threat.js';
+import { DEFAULT_AMBITION, ambitionProgress } from '../data/ambitions.js';
 
 /** Backgrounds that turn up looking for work, roughly worst to best. */
 const RECRUIT_POOL = ['daytaler', 'farmhand', 'militia', 'brawler', 'poacher', 'sellsword', 'hedgeKnight'];
@@ -52,7 +54,8 @@ export class Party {
  * carries.
  */
 export class Campaign {
-  constructor({ seed, cols = 28, rows = 18, roster = [], crowns = 900 } = {}) {
+  constructor({ seed, cols = 28, rows = 18, roster = [], crowns = 900,
+    ambition = DEFAULT_AMBITION } = {}) {
     this.rng = new RNG(seed);
     this.bus = new EventBus();
     this.world = new World(cols, rows).generate(this.rng);
@@ -64,6 +67,15 @@ export class Campaign {
     this.bands = [];
     this.contracts = [];         // taken contracts, in progress
     this.pendingEncounter = null;
+
+    /** What this run is played for; the only thing that ends it. */
+    this.ambitionId = ambition;
+    this.ambitionDone = false;
+    /** 0-100. Drives band composition; see campaign/threat.js. */
+    this.threat = 0;
+    this.campsCleared = 0;
+    this.battlesFought = 0;
+    this.fallen = 0;
 
     const start = this.world.startingSettlement();
     this.party = new Party({
@@ -94,7 +106,7 @@ export class Campaign {
 
   // ---------------------------------------------------------------- parties
   spawnBand(camp) {
-    const roster = bandComposition(this.rng, camp.strength, this.day);
+    const roster = bandComposition(this.rng, camp.strength, this.threat);
     const band = new Party({
       id: `band${this.bands.length}-${Math.floor(this.time)}`,
       faction: 'enemy',
@@ -160,10 +172,29 @@ export class Campaign {
       for (const b of this.bands) if (b.alive) { this.steerBand(b); this.advance(b, dt); }
 
       this.rest(dt);
+      this.raiseThreat(dt);
       this.checkContact();
       this.respawnCamps(dt);
       this.checkDayRollover();
+      this.checkAmbition();
     }
+  }
+
+  /** Camps left standing make the country worse, a little at a time. */
+  raiseThreat(hours) {
+    const live = this.bands.filter((b) => b.alive && b.camp).length;
+    this.threat = Math.min(THREAT_MAX, this.threat + threatRise(hours / HOURS_PER_DAY, live));
+  }
+
+  /** Fires once, when the company has done what it set out to do. */
+  checkAmbition() {
+    if (this.ambitionDone) return;
+    const p = ambitionProgress(this);
+    if (!p.done) return;
+    this.ambitionDone = true;
+    this.paused = true;
+    this.note(`${p.def.name} — 뜻을 이루었다.`, 'renown');
+    this.bus.emit('ambition:done', { progress: p, campaign: this });
   }
 
   advance(party, hours) {
@@ -238,10 +269,13 @@ export class Campaign {
     this.pendingEncounter = null;
     if (!band) return;
 
+    this.battlesFought++;
     if (result === 'victory') {
       band.alive = false;
       if (band.camp) {
         band.camp.cooldown = CAMP_RESPAWN_DAYS * HOURS_PER_DAY;
+        this.campsCleared++;
+        this.threat = Math.max(0, this.threat - THREAT_PER_CLEAR);
         this.onCampCleared(band.camp);
       }
       this.gainRenown(band.roster.length * 4, false);
@@ -466,9 +500,9 @@ export class Campaign {
     }
   }
 
-  /** Unspent captain points. */
+  /** Unspent captain points. Never negative, however renown moves. */
   get captainPoints() {
-    return pointsFromRenown(this.company.renown) - this.company.captainSpent;
+    return Math.max(0, pointsFromRenown(this.company.renown) - this.company.captainSpent);
   }
 
   takeCaptainNode(id) {

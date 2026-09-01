@@ -6,11 +6,12 @@ import { icons } from './ui/icons.js';
 import { TerrainAtlas } from './render/terrainAtlas.js';
 import { HUD } from './ui/hud.js';
 import { WorldHud } from './ui/worldHud.js';
-import { overlay } from './ui/overlay.js';
+import { overlay, esc } from './ui/overlay.js';
 import { Campaign } from './campaign/campaign.js';
 import { CampaignScene } from './scenes/campaignScene.js';
 import { BattleScene } from './scenes/battleScene.js';
 import { LabScene } from './scenes/labScene.js';
+import { AMBITIONS, ambitionProgress } from './data/ambitions.js';
 
 /** How many brothers the company can field at once. */
 export const MAX_COMPANY_SIZE = 9;
@@ -54,7 +55,58 @@ class App {
       seed: this.rng.int(0, 1e9), cols: 28, rows: 18, roster, crowns: STARTING_CROWNS,
     });
     this.campaignScene = new CampaignScene(this, this.campaign);
+    this.campaign.bus.on('ambition:done', ({ progress }) => this.runComplete(progress));
     this.setScene(this.campaignScene);
+    this.askAmbition();
+  }
+
+  /**
+   * A company with no goal is a sandbox. The choice is made before the clock
+   * starts and cannot be skipped, because it decides how the run is played.
+   */
+  askAmbition() {
+    const cards = Object.values(AMBITIONS).map((a) => `
+      <button class="ambition" data-choice="${a.id}">
+        <span class="am-icon">${a.icon}</span>
+        <span class="am-text">
+          <b>${esc(a.name)}</b>
+          <em>${esc(a.blurb)}</em>
+          <span class="am-goal">${a.unit} <b>${a.goal.toLocaleString()}</b></span>
+        </span>
+      </button>`).join('');
+
+    overlay.choose('무엇을 위해 싸우는가', `
+      <p style="color:var(--muted);margin:0 0 14px">
+        용병단이 이루려는 것을 하나 고른다. 이룬 순간 여정이 끝나고, 고른 것이
+        이 판을 어떻게 살아갈지를 정한다.
+      </p>
+      <div class="ambitions">${cards}</div>`,
+    (id) => {
+      this.campaign.ambitionId = id;
+      const a = AMBITIONS[id];
+      this.campaign.note(`용병단의 뜻을 세웠다 — ${a.name} (${a.unit} ${a.goal}).`, 'renown');
+      this.worldHud.refresh();
+    }, 'wide');
+  }
+
+  /** The ambition is met: the run is over, and this is the reckoning. */
+  runComplete(p) {
+    const c = this.campaign;
+    const alive = c.company.alive;
+    const best = alive.slice().sort((a, b) => b.level - a.level)[0];
+    const row = (k, v) => `<div class="gear-row"><i>${k}</i><em>${v}</em></div>`;
+    overlay.modal(`${p.def.icon} ${p.def.name}`, `
+      뜻을 이루었다. ${c.day}일간의 여정이 여기서 끝난다.
+      <hr style="border:0;border-top:1px solid var(--edge);margin:10px 0">
+      ${row(p.def.unit, `${p.have.toLocaleString()} / ${p.goal.toLocaleString()}`)}
+      ${row('버틴 날', `${c.day}일`)}
+      ${row('치른 전투', `${c.battlesFought}회`)}
+      ${row('소탕한 야영지', `${c.campsCleared}곳`)}
+      ${row('잃은 단원', `${c.fallen}명`)}
+      ${row('남은 단원', `${alive.length}명`)}
+      ${best ? row('최고참', `${esc(best.name)} · ${best.level} 레벨`) : ''}
+      ${row('금고', `${c.company.crowns.toLocaleString()} 크라운`)}`,
+    () => this.newCampaign(), '새 용병단');
   }
 
   /** The company's roster, purse and stash - the state that outlives a battle. */
@@ -112,6 +164,7 @@ class App {
     // the outcome, then the butcher's bill, then what was carried off.
     this.campaign.resolveEncounter(result);
     for (const u of this.company.buryDead()) {
+      this.campaign.fallen++;
       this.campaign.note(`${u.name} 이(가) 전사했다.`, 'death');
     }
     const promoted = this.company.ensureCaptain();

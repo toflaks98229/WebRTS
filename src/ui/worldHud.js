@@ -3,6 +3,8 @@ import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
 import { bandStrengthLabel } from '../campaign/bands.js';
 import { CONTRACT_TYPES, daysLeft } from '../campaign/contracts.js';
 import { xpProgress } from '../data/perks.js';
+import { ambitionProgress } from '../data/ambitions.js';
+import { threatDef, THREAT_MAX } from '../campaign/threat.js';
 import { HOURS_PER_DAY } from '../campaign/campaign.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -65,10 +67,39 @@ export class WorldHud {
       wounded ? `부상 <b>${wounded}</b>명` : null,
       points ? `<b style="color:#7fb069">특성 ${points}점</b>` : null,
       c.party.moving ? '이동 중' : here ? `<b>${esc(here.name)}</b> 체류` : '야영 중',
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).join(' · ') + this.renderMeters();
 
     this.renderRoster();
     this.renderActions();
+  }
+
+  /**
+   * The two numbers that decide how the run goes: how close the company is to
+   * what it set out to do, and how bad the country has got while it worked.
+   * Both live in the top bar because a goal nobody can see is not a goal.
+   */
+  renderMeters() {
+    const c = this.campaign;
+    const a = ambitionProgress(c);
+    const t = threatDef(c.threat);
+    const threatPct = Math.min(100, (c.threat / THREAT_MAX) * 100);
+    return `
+      <span class="meter-chip" title="${esc(a.def.name)} — ${esc(a.def.blurb)}">
+        <span class="mc-icon">${a.def.icon}</span>
+        <span class="mc-body">
+          <span class="mc-top"><span>${esc(a.def.name)}</span>
+            <b>${a.have.toLocaleString()} / ${a.goal.toLocaleString()}</b></span>
+          <span class="mc-bar"><i style="width:${a.ratio * 100}%"></i></span>
+        </span>
+      </span>
+      <span class="meter-chip" title="위협도 ${Math.round(c.threat)} — ${esc(t.note)}">
+        <span class="mc-icon" style="color:${t.color}">⚑</span>
+        <span class="mc-body">
+          <span class="mc-top"><span>위협</span>
+            <b style="color:${t.color}">${esc(t.name)}</b></span>
+          <span class="mc-bar"><i style="width:${threatPct}%;background:${t.color}"></i></span>
+        </span>
+      </span>`;
   }
 
   renderRoster() {

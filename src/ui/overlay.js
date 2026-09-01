@@ -65,9 +65,32 @@ export const overlay = {
     e.title.textContent = title;
     e.body.innerHTML = bodyHTML;
     e.ok.textContent = okLabel;
+    e.ok.classList.remove('hidden');
     e.box.className = `modal-box ${size}`.trim();
     modalOk = onOk;
     e.modal.classList.remove('hidden');
+  },
+
+  /**
+   * A modal answered by picking one of its options rather than by dismissing
+   * it. `onPick` receives the `data-choice` of whatever was clicked, and the
+   * confirm button is hidden - there is no way past it without choosing.
+   */
+  choose(title, bodyHTML, onPick, size = '') {
+    const e = els();
+    e.title.textContent = title;
+    e.body.innerHTML = bodyHTML;
+    e.box.className = `modal-box ${size}`.trim();
+    e.ok.classList.add('hidden');
+    modalOk = null;
+    e.modal.classList.remove('hidden');
+    e.body.querySelectorAll('[data-choice]').forEach((node) => {
+      node.addEventListener('click', () => {
+        e.modal.classList.add('hidden');
+        e.ok.classList.remove('hidden');
+        onPick(node.dataset.choice);
+      });
+    });
   },
 
   isOpen() { return !els().modal.classList.contains('hidden'); },

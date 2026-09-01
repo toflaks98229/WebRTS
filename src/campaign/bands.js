@@ -1,19 +1,25 @@
 import { TEMPLATES } from '../data/units.js';
+import { threatTier } from './threat.js';
 
 /**
  * Enemy band composition. A band's roster is rolled once when it spawns and
  * kept, so what the player scouts on the map is what they meet in battle.
+ *
+ * Scaling reads the world's threat rather than the date. The calendar was not
+ * something the player could act on - day 30 was day 30 however they had spent
+ * it - whereas threat answers to camps left standing.
  */
-export function bandComposition(rng, strength, day = 1) {
+export function bandComposition(rng, strength, threat = 0) {
+  const t = threatTier(threat);
   const tier = [TEMPLATES.banditThug, TEMPLATES.banditThug, TEMPLATES.banditRaider];
-  if (strength >= 2 || day >= 6) tier.push(TEMPLATES.banditArcher, TEMPLATES.wolf);
-  if (strength >= 3 || day >= 12) tier.push(TEMPLATES.banditVeteran);
+  if (strength >= 2 || t >= 1) tier.push(TEMPLATES.banditArcher, TEMPLATES.wolf);
+  if (strength >= 3 || t >= 2) tier.push(TEMPLATES.banditVeteran);
 
   const pool = [];
   if (strength >= 2) pool.push(TEMPLATES.banditVeteran);
   if (strength >= 3) pool.push(TEMPLATES.banditLeader);
 
-  const size = 2 + strength + Math.min(3, Math.floor(day / 8));
+  const size = 2 + strength + Math.min(3, t);
   while (pool.length < size) pool.push(rng.pick(tier));
   return pool.map((t) => t.id);
 }

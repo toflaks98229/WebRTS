@@ -583,3 +583,68 @@ kbd {
 .ic-slot { display: flex; align-items: center; justify-content: center; height: 26px; }
 .ic-slot .ic { width: 26px; height: 26px; }
 .skill.disabled .ic-slot .ic { filter: grayscale(.9) brightness(.65); }
+
+
+/* ── 야망 진행도 · 위협도 ─────────────────────────────────────────── */
+.meter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid var(--edge);
+  vertical-align: middle;
+}
+.meter-chip .mc-icon { font-size: 14px; line-height: 1; opacity: 0.9; }
+.meter-chip .mc-body { display: flex; flex-direction: column; gap: 3px; min-width: 108px; }
+.meter-chip .mc-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1;
+}
+.meter-chip .mc-top b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.meter-chip .mc-bar {
+  display: block;
+  height: 3px;
+  background: #00000055;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.meter-chip .mc-bar i {
+  display: block;
+  height: 100%;
+  background: var(--gold, #c8a24a);
+  transition: width 0.4s ease;
+}
+
+/* ── 야망 선택 ────────────────────────────────────────────────────── */
+.ambitions { display: grid; gap: 8px; }
+.ambition {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  background: #0000002e;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ambition:hover, .ambition:focus-visible {
+  border-color: var(--gold, #c8a24a);
+  background: #c8a24a14;
+}
+.ambition .am-icon { font-size: 22px; line-height: 1.2; flex: none; }
+.ambition .am-text { display: flex; flex-direction: column; gap: 4px; }
+.ambition .am-text b { font-size: 15px; }
+.ambition .am-text em { font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.ambition .am-goal { font-size: 12px; color: var(--muted); }
+.ambition .am-goal b { color: var(--gold, #c8a24a); font-variant-numeric: tabular-nums; }
