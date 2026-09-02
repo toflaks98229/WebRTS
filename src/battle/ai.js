@@ -249,17 +249,24 @@ export class AI {
     const foes = b.enemiesOf(unit);
     const nearest = foes.length ? Math.min(...foes.map((f) => distance(unit.hex, f.hex))) : 99;
 
-    if (nearest === 2 && unit.stances.size === 0 && unit.weapon?.kind === 'spear'
+    // Bracing is only worth it while the fight is still coming to you. Two
+    // spear lines two hexes apart will otherwise stand there bracing at each
+    // other forever - measured at 667 rounds - because holding position returns
+    // true and the advance fallback below never gets a turn. The same ramp that
+    // pushes the line forward eventually stops it digging in.
+    const braceWorthIt = this.aggression() < 12;
+
+    if (braceWorthIt && nearest === 2 && unit.stances.size === 0 && unit.weapon?.kind === 'spear'
         && unit.canAfford(SKILLS.spearwall)) {
       b.useSkill(unit, 'spearwall');
       return true;
     }
-    if (nearest <= 1 && unit.stances.size === 0 && unit.canAfford(SKILLS.riposte)
+    if (braceWorthIt && nearest <= 1 && unit.stances.size === 0 && unit.canAfford(SKILLS.riposte)
         && unit.skills.some((s) => s.id === 'riposte')) {
       b.useSkill(unit, 'riposte');
       return true;
     }
-    if (nearest <= 1 && unit.shield?.durability > 0 && unit.stances.size === 0
+    if (braceWorthIt && nearest <= 1 && unit.shield?.durability > 0 && unit.stances.size === 0
         && unit.ap >= SKILLS.shieldwall.ap && unit.canAfford(SKILLS.shieldwall)) {
       b.useSkill(unit, 'shieldwall');
       return true;

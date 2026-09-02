@@ -109,11 +109,12 @@ export class Campaign {
 
   // ---------------------------------------------------------------- parties
   spawnBand(camp) {
-    const roster = bandComposition(this.rng, camp.strength, this.threat);
+    const roster = bandComposition(this.rng, camp.strength, this.threat, camp.kind);
     const band = new Party({
       id: `band${this.bands.length}-${Math.floor(this.time)}`,
       faction: 'enemy',
-      name: bandName(camp.strength),
+      kind: camp.kind || 'bandit',
+      name: bandName(camp.strength, camp.kind),
       hex: camp.hex,
       speed: 0.9 + camp.strength * 0.06,
       roster,

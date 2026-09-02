@@ -24,7 +24,7 @@ export function salvage(survivors, fallen) {
   const drops = { weapon: [], shield: [], body: [], head: [] };
   for (const d of fallen) {
     for (const slot of Object.keys(drops)) {
-      if (d[slot]) drops[slot].push(d[slot]);
+      if (d[slot] && !d[slot].natural) drops[slot].push(d[slot]);
     }
   }
 

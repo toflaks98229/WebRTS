@@ -1,5 +1,6 @@
 import { key, neighbors, distance, range as hexRange } from '../hex/hex.js';
 import { findPath } from '../hex/pathfind.js';
+import { FACTION_IDS, factionForTerrain } from '../data/factions.js';
 import { WORLD_TERRAIN, worldTerrain, ROAD_SPEEDUP, SETTLEMENTS, settlementName } from '../data/worldTerrain.js';
 
 /** Smoothstep-interpolated value noise over a coarse random grid. */
@@ -166,17 +167,41 @@ export class World {
     }
   }
 
-  /** Bandit camps hide in rough country, well away from the roads. */
+  /**
+   * Camps, and who is in them. The ground decides: beasts hold the deep woods,
+   * deserters sit on the open country near the roads they live off, bandits
+   * take the rough ground between. So a player reading the map can tell what
+   * kind of fight a marker means before walking into it.
+   *
+   * At least one of each kind is planted where the island allows it, because a
+   * map that happens to roll all bandits is a map missing two thirds of the game.
+   */
   placeCamps(rng) {
-    const spots = this.all().filter((t) => ['forest', 'hills', 'swamp', 'mountain'].includes(t.terrain)
-      && !t.road && !t.settlement
-      && this.settlements.every((s) => distance(s.hex, t.hex) >= 3));
-    const count = Math.max(2, Math.round(this.settlements.length * 0.8));
-    for (const t of rng.shuffle(spots).slice(0, count)) {
-      if (this.camps.some((c) => distance(c.hex, t.hex) < 4)) continue;
-      const camp = { id: `c${this.camps.length}`, hex: t.hex, tile: t, strength: rng.int(1, 3) };
+    const open = (t) => !t.road && !t.settlement && !t.camp
+      && this.settlements.every((s) => distance(s.hex, t.hex) >= 3);
+    const clear = (t) => this.camps.every((c) => distance(c.hex, t.hex) >= 4);
+
+    const spots = rng.shuffle(this.all().filter((t) => open(t) && factionForTerrain(t.terrain)));
+    const plant = (t) => {
+      const camp = {
+        id: `c${this.camps.length}`,
+        hex: t.hex, tile: t,
+        kind: factionForTerrain(t.terrain),
+        strength: rng.int(1, 3),
+      };
       this.camps.push(camp);
       t.camp = camp;
+    };
+
+    for (const id of FACTION_IDS) {
+      const spot = spots.find((t) => factionForTerrain(t.terrain) === id && clear(t));
+      if (spot) plant(spot);
+    }
+
+    const count = Math.max(2, Math.round(this.settlements.length * 0.8));
+    for (const t of spots) {
+      if (this.camps.length >= count) break;
+      if (!t.camp && clear(t)) plant(t);
     }
   }
 

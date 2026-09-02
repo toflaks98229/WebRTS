@@ -193,8 +193,16 @@ const UNITS = {
   'unit.banditVeteran': ['mon/humanoids/humans/vault_guard.png', 'mon/humanoids/humans/vault_sentinel.png'],
   'unit.banditLeader':  ['mon/humanoids/humans/vault_warden.png', 'mon/humanoids/humans/vault_guard.png'],
 
-  // ---- beasts ----
-  'unit.wolf': ['mon/animals/wolf.png'],
+  // ---- 탈영병 : ex-soldiers, so they are drawn as soldiers ----
+  'unit.deserterRecruit':  ['mon/humanoids/humans/human3.png', 'mon/humanoids/humans/human.png'],
+  'unit.deserter':         ['mon/unique/terence.png', 'mon/humanoids/humans/human2.png'],
+  'unit.deserterBowman':   ['mon/humanoids/humans/vault_sentinel.png', 'mon/humanoids/humans/human2.png'],
+  'unit.deserterSergeant': ['mon/unique/margery.png', 'mon/humanoids/humans/vault_warden.png'],
+
+  // ---- 짐승 ----
+  'unit.wolf':      ['mon/animals/wolf.png'],
+  'unit.jackal':    ['mon/animals/jackal.png'],
+  'unit.blackBear': ['mon/animals/black_bear.png'],
 };
 
 /**
@@ -223,6 +231,7 @@ const HANDS = {
   vault_warden:      { weapon: [1, 0],   shield: [-2, 1] },
   donald:            { weapon: [-2, -4], shield: [-1, -1] },
   vault_sentinel:    { weapon: [1, 0],   shield: null },
+  margery:           { weapon: [1, -3],  shield: null },
   imperial_myrmidon: { weapon: [0, 2],   shield: null },
   terence:           { weapon: [0, 0],   shield: null },
   joseph:            { weapon: [0, 0],   shield: null },

@@ -1,5 +1,6 @@
 import { neighbors, key, DIRS, add } from '../hex/hex.js';
 import { worldTerrain, SETTLEMENTS } from '../data/worldTerrain.js';
+import { faction } from '../data/factions.js';
 
 /** World pixels per source pixel; the map hex is smaller than a battle hex. */
 const TEX_SCALE = 1.4;
@@ -8,6 +9,13 @@ const FACTION = {
   player: { main: '#d8b45a', dark: '#6b5324' },
   enemy: { main: '#b0503f', dark: '#5e2820' },
 };
+
+/** Darken a hex colour toward black by `t`, for the fill under a marker. */
+function darken(hex, t) {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c) => Math.round(c * (1 - t));
+  return `rgb(${mix((n >> 16) & 255)},${mix((n >> 8) & 255)},${mix(n & 255)})`;
+}
 
 function withAlpha(hex, a) {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -279,15 +287,31 @@ export class WorldRenderer {
     for (const camp of this.campaign.world.camps) {
       const live = this.campaign.bands.some((b) => b.alive && b.camp === camp);
       const c = this.layout.toPixel(camp.hex);
+      const f = faction(camp.kind);
       ctx.globalAlpha = live ? 1 : 0.35;
-      ctx.fillStyle = '#4a2f26';
+      // Each kind gets its own mark, so the map says what is waiting there:
+      // a tent for bandits, a den mouth for beasts, a standard for deserters.
+      ctx.fillStyle = darken(f.color, 0.55);
       ctx.beginPath();
-      ctx.moveTo(c.x, c.y - s * 0.3);
-      ctx.lineTo(c.x - s * 0.3, c.y + s * 0.22);
-      ctx.lineTo(c.x + s * 0.3, c.y + s * 0.22);
-      ctx.closePath();
+      if (camp.kind === 'beast') {
+        ctx.ellipse(c.x, c.y + s * 0.06, s * 0.3, s * 0.22, 0, Math.PI, 0);
+        ctx.closePath();
+      } else if (camp.kind === 'deserter') {
+        ctx.moveTo(c.x - s * 0.06, c.y - s * 0.32);
+        ctx.lineTo(c.x + s * 0.3, c.y - s * 0.18);
+        ctx.lineTo(c.x - s * 0.06, c.y - s * 0.04);
+        ctx.lineTo(c.x - s * 0.06, c.y + s * 0.24);
+        ctx.lineTo(c.x - s * 0.16, c.y + s * 0.24);
+        ctx.lineTo(c.x - s * 0.16, c.y - s * 0.32);
+        ctx.closePath();
+      } else {
+        ctx.moveTo(c.x, c.y - s * 0.3);
+        ctx.lineTo(c.x - s * 0.3, c.y + s * 0.22);
+        ctx.lineTo(c.x + s * 0.3, c.y + s * 0.22);
+        ctx.closePath();
+      }
       ctx.fill();
-      ctx.strokeStyle = '#9c6a52';
+      ctx.strokeStyle = f.color;
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.globalAlpha = 1;

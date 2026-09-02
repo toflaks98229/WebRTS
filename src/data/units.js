@@ -80,11 +80,53 @@ export const TEMPLATES = {
     meleeSkill: [62, 70], rangedSkill: [45, 55], meleeDefense: [12, 18], rangedDefense: [5, 10],
     gear: { weapon: 'battleAxe', body: 'leatherArmor', head: 'kettleHat' },
   },
+  // ---- 짐승 : no armour, no nerve, and too many of them ----
+  jackal: {
+    id: 'jackal', name: '들개', faction: 'enemy', portrait: 'beast', beast: true, fearless: true,
+    hp: [26, 34], fatigue: [105, 120], resolve: [15, 25], initiative: [140, 160],
+    meleeSkill: [42, 50], rangedSkill: [0, 0], meleeDefense: [8, 14], rangedDefense: [6, 12],
+    gear: { weapon: 'fangs' },
+  },
+  blackBear: {
+    id: 'blackBear', name: '큰곰', faction: 'enemy', portrait: 'beast', beast: true, fearless: true,
+    hp: [110, 135], fatigue: [95, 110], resolve: [40, 50], initiative: [70, 85],
+    meleeSkill: [55, 65], rangedSkill: [0, 0], meleeDefense: [4, 9], rangedDefense: [0, 4],
+    gear: { weapon: 'maw' },
+  },
+
+  // ---- 탈영병 : few, disciplined, and behind real steel ----
+  deserterRecruit: {
+    id: 'deserterRecruit', name: '탈영 신병', faction: 'enemy', portrait: 'soldier',
+    hp: [48, 58], fatigue: [95, 108], resolve: [34, 44], initiative: [96, 110],
+    meleeSkill: [40, 48], rangedSkill: [30, 38], meleeDefense: [3, 7], rangedDefense: [1, 5],
+    gear: { weapon: 'spear', body: 'gambeson', head: 'hood' },
+  },
+  deserter: {
+    id: 'deserter', name: '탈영병', faction: 'enemy', portrait: 'soldier',
+    hp: [58, 68], fatigue: [100, 115], resolve: [48, 58], initiative: [92, 106],
+    meleeSkill: [50, 58], rangedSkill: [38, 46], meleeDefense: [5, 9], rangedDefense: [3, 8],
+    gear: { weapon: 'armingSword', shield: 'heaterShield', body: 'leatherArmor', head: 'leatherCap' },
+  },
+  deserterBowman: {
+    id: 'deserterBowman', name: '탈영 석궁수', faction: 'enemy', portrait: 'soldier',
+    hp: [55, 65], fatigue: [98, 112], resolve: [45, 56], initiative: [100, 115],
+    meleeSkill: [44, 52], rangedSkill: [58, 68], meleeDefense: [5, 10], rangedDefense: [4, 9],
+    gear: { weapon: 'crossbow', body: 'gambeson', head: 'leatherCap' },
+  },
+  deserterSergeant: {
+    id: 'deserterSergeant', name: '탈영 하사', faction: 'enemy', portrait: 'soldier',
+    hp: [72, 84], fatigue: [108, 122], resolve: [58, 68], initiative: [88, 100],
+    meleeSkill: [56, 64], rangedSkill: [45, 55], meleeDefense: [7, 12], rangedDefense: [4, 9],
+    // Two hands on the hammer: he is the one who opens armour, and he has
+    // nothing to hide behind while he does it.
+    gear: { weapon: 'warhammer', body: 'mailShirt', head: 'kettleHat' },
+  },
+
   wolf: {
-    id: 'wolf', name: '늑대', faction: 'enemy', portrait: 'beast', beast: true,
+    id: 'wolf', name: '늑대', faction: 'enemy', portrait: 'beast', beast: true, fearless: true,
     hp: [40, 50], fatigue: [110, 125], resolve: [25, 35], initiative: [130, 150],
     meleeSkill: [50, 60], rangedSkill: [0, 0], meleeDefense: [10, 16], rangedDefense: [8, 14],
-    gear: { weapon: 'dagger' },
+    gear: { weapon: 'greatFangs' },
   },
 };
 

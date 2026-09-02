@@ -32,6 +32,10 @@ export const SKILLS = {
   reload:     { id: 'reload',     name: '재장전',     icon: '↻', tile: 'skill.crossbow', type: 'self',   ap: 4, fatigue: 10, desc: '석궁을 재장전한다.', effect: 'reload' },
   throwJavelin:{id: 'throwJavelin',name:'투창',       icon: '↗', tile: 'skill.throw', type: 'ranged', ap: 4, fatigue: 18, hitBonus: 0,   damageMult: 1.0, desc: '투창을 던진다. 방어구를 잘 뚫는다.', consumes: 1 },
 
+  // --- Beasts ---
+  bite:       { id: 'bite',       name: '물어뜯기',   icon: '🦷', tile: 'skill.brawl', type: 'melee', ap: 4, fatigue: 12, hitBonus: 5,   damageMult: 1.0, desc: '달려들어 물어뜯는다.' },
+  maul:       { id: 'maul',       name: '후려치기',   icon: '🐾', tile: 'skill.brawl', type: 'melee', ap: 5, fatigue: 18, hitBonus: -5,  damageMult: 1.0, desc: '앞발로 후려친다. 갑옷째 짓뭉갠다.' },
+
   // --- Shield ---
   shieldwall: { id: 'shieldwall', name: '방패벽',     icon: '🛡', tile: 'skill.shield', type: 'self',   ap: 3, fatigue: 20, desc: '방패를 세워 방어력을 크게 올린다.', effect: 'shieldwall' },
   shieldBash: { id: 'shieldBash', name: '방패 밀치기',icon: '↦', tile: 'skill.shield', type: 'melee',  ap: 4, fatigue: 20, hitBonus: 0,   damageMult: 0.2,  desc: '적을 밀쳐낸다.', effect: 'push' },

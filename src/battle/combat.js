@@ -125,6 +125,7 @@ export function resolveAttack(battle, attacker, target, sk, opts = {}) {
     return res;
   }
   res.hit = true;
+  battle.lastBlood = battle.round;      // the fight is still a fight
 
   // --- shield-breaking attacks hit the shield instead of the body ---
   if (sk.effect === 'shieldBreak' && target.shield && target.shield.durability > 0) {

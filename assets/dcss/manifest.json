@@ -240,8 +240,30 @@
       "mon/humanoids/humans/vault_warden.png",
       "mon/humanoids/humans/vault_guard.png"
     ],
+    "unit.deserterRecruit": [
+      "mon/humanoids/humans/human3.png",
+      "mon/humanoids/humans/human.png"
+    ],
+    "unit.deserter": [
+      "mon/unique/terence.png",
+      "mon/humanoids/humans/human2.png"
+    ],
+    "unit.deserterBowman": [
+      "mon/humanoids/humans/vault_sentinel.png",
+      "mon/humanoids/humans/human2.png"
+    ],
+    "unit.deserterSergeant": [
+      "mon/unique/margery.png",
+      "mon/humanoids/humans/vault_warden.png"
+    ],
     "unit.wolf": [
       "mon/animals/wolf.png"
+    ],
+    "unit.jackal": [
+      "mon/animals/jackal.png"
+    ],
+    "unit.blackBear": [
+      "mon/animals/black_bear.png"
     ]
   },
   "gear": {
@@ -329,6 +351,13 @@
       "weapon": [
         1,
         0
+      ],
+      "shield": null
+    },
+    "margery": {
+      "weapon": [
+        1,
+        -3
       ],
       "shield": null
     },

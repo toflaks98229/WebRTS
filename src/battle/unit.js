@@ -41,6 +41,8 @@ export class Unit {
     this.title = tpl.name;
     this.portrait = tpl.portrait;
     this.isBeast = !!tpl.beast;
+    /** Nothing to break: a beast fights until it is dead. */
+    this.fearless = !!tpl.fearless;
 
     // Base attributes. Perks scale several of these, so the rolled value is
     // kept as `*Base` and the effective number is a getter.
@@ -329,8 +331,8 @@ export class Unit {
 
   // ---- morale --------------------------------------------------------
   shiftMorale(steps) {
-    // The captain's own resolve is a company fixture.
-    if (steps < 0 && this.hasCaptainPerk('unbreakable')) return false;
+    // The captain's own resolve is a company fixture; an animal has none to lose.
+    if (steps < 0 && (this.fearless || this.hasCaptainPerk('unbreakable'))) return false;
     const i = MORALE_LADDER.indexOf(this.morale);
     const n = Math.max(0, Math.min(MORALE_LADDER.length - 1, i + steps));
     const changed = MORALE_LADDER[n] !== this.morale;

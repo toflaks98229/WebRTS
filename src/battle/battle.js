@@ -11,6 +11,17 @@ import { rollInjury } from '../data/injuries.js';
 /** However badly a man was used, he is never quite certain to be marked. */
 const INJURY_CAP = 70;
 
+/**
+ * Rounds without a single blow landing before the two lines are called apart.
+ *
+ * This is a backstop, not a substitute for the AI closing properly. It exists
+ * because terrain can genuinely wall two sides off from each other - an archer
+ * with no line of sight, a melee line with no route through its own crowd - and
+ * a battle that cannot end is worse than one that ends inconclusively. Measured
+ * at roughly one fight in seven hundred.
+ */
+const STALEMATE_ROUNDS = 20;
+
 export const PHASE = { deploy: 'deploy', playing: 'playing', over: 'over' };
 
 /**
@@ -64,6 +75,7 @@ export class Battle {
   start() {
     this.phase = PHASE.playing;
     this.round = 0;
+    this.lastBlood = 0;
     this.nextRound();
     this.bus.emit('battle:start', this);
   }
@@ -314,6 +326,11 @@ export class Battle {
   // ---------------------------------------------------------------- turn flow
   nextRound() {
     this.round++;
+    if (this.round - (this.lastBlood || 0) > STALEMATE_ROUNDS) {
+      this.log('양쪽 모두 서로에게 닿지 못했다. 전열을 물린다.', 'round');
+      this.finish('retreat');
+      return;
+    }
     for (const u of this.living) u.hasActed = false;
     this.order = this.living
       .map((u) => ({ u, i: u.initiative + this.rng.int(0, 10) }))

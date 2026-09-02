@@ -24,6 +24,17 @@ export const WEAPONS = {
   pike:         { id: 'pike',         name: '파이크',       kind: 'spear', damage: [28, 40], armorMult: 0.9,  armorPen: 0.20, range: 2, fatigue: 14, twoHanded: true, skills: ['spearThrust', 'spearwall'], value: 1500 },
 
   // --- Daggers ---
+  // Teeth and claws. `natural` keeps them out of the loot pile - nobody strips
+  // a wolf for its jaw - and off the paper doll.
+  //
+  // They carry high armour penetration because the alternative was measured and
+  // it was worse: at low penetration a jackal did 1.6 damage a bite to a man in
+  // leather, so a pack fight became a thirty-round grind that the player could
+  // not lose and did not enjoy. Teeth find the gaps armour leaves.
+  fangs:        { id: 'fangs',        name: '송곳니',       kind: 'natural', damage: [20, 30], armorMult: 0.85, armorPen: 0.45, range: 1, fatigue: 0, natural: true, skills: ['bite'], value: 0 },
+  greatFangs:   { id: 'greatFangs',   name: '큰 송곳니',    kind: 'natural', damage: [28, 40], armorMult: 0.95, armorPen: 0.50, range: 1, fatigue: 0, natural: true, skills: ['bite'], value: 0 },
+  maw:          { id: 'maw',          name: '아가리와 발톱', kind: 'natural', damage: [40, 58], armorMult: 1.2,  armorPen: 0.20, range: 1, fatigue: 0, natural: true, skills: ['maul'], value: 0 },
+
   dagger:       { id: 'dagger',       name: '단검',         kind: 'dagger',damage: [18, 24], armorMult: 0.5,  armorPen: 0.30, range: 1, fatigue: 3,  skills: ['stab', 'puncture'], value: 120 },
 
   // --- Ranged ---
